@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Excel File</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(to bottom, #2b2b2b, #3b3b3b);
+            overflow: hidden;
+            color: #fff;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .upload-container {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 20px;
+            padding: 40px 60px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6);
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            backdrop-filter: blur(15px);
+        }
+
+        .upload-container h1 {
+            font-size: 36px;
+            color: #8a8a8a;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        label {
+            font-size: 18px;
+            font-weight: 500;
+            margin-top: 20px;
+            display: block;
+            color: #bbb;
+        }
+
+        input[type="file"], input[type="text"], input[type="number"], input[type="submit"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #444;
+            color: white;
+            margin-top: 10px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        input[type="file"]:hover, input[type="text"]:hover, input[type="number"]:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.02);
+        }
+
+        input[type="submit"] {
+            background: #8a8a8a;
+            color: #1e1e1e;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+            padding: 16px 0;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="submit"]:hover {
+            background: #8a8a8a;
+            transform: translateY(-5px);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 40px;
+        }
+
+        table th, table td {
+            padding: 15px;
+            border: 1px solid #444;
+            text-align: center;
+            color: #ddd;
+        }
+
+        table th {
+            background: #8a8a8a;
+            color: #1e1e1e;
+            font-weight: bold;
+        }
+
+        .add-row-btn, .delete-row-btn {
+            background: #8a8a8a;
+            color: #fff;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .add-row-btn:hover, .delete-row-btn:hover {
+            background: #8a8a8a;
+        }
+
+        .file-input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .file-input-container p {
+            margin: 15px 0;
+            font-size: 18px;
+        }
+
+        .file-input-container label {
+            font-size: 16px;
+            color: #fff;
+            text-transform: uppercase;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #dropzone {
+            background: #1e1e1e;
+            padding: 30px 40px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 2px dashed #8a8a8a;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        #dropzone:hover {
+            background: rgba(0, 224, 177, 0.1);
+            transform: scale(1.05);
+        }
+
+        #dropzone p {
+            margin: 10px 0;
+            color: #bbb;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="stars"></canvas>
+
+    <div class="container">
+        <div class="upload-container">
+            <h1>Upload Your Packing List File</h1>
+            <form action="{{ url_for('app_job_work.process_file') }}" method="post" enctype="multipart/form-data">
+                <!-- File Upload Section -->
+                <div class="file-input-container">
+                    <div id="dropzone">
+                        <p>Drag and drop your file here or</p>
+                        <label for="file">Browse</label>
+                        <input type="file" name="file" id="file" required>
+                    </div>
+                </div>
+
+                <label for="challan_no">Challan No.</label>
+                <input type="text" id="challan_no" name="challan_no" placeholder="Enter Challan No." required>
+
+                <label for="exchange_rate">Exchange Rate</label>
+                <input type="number" step="0.01" id="exchange_rate" name="exchange_rate" placeholder="Enter exchange rate" required>
+
+                <label for="invoice_no_date">Invoice No. & Date</label>
+                <input type="text" id="invoice_no_date" name="invoice_no_date" placeholder="Enter invoice number and date" required>
+
+                <label for="Exporter_Ref">Exporter's Ref</label>
+                <input type="text" id="Exporter_Ref" name="Exporter_Ref" placeholder="Enter Exporter's Ref" required>
+
+                <!-- Dynamic Table for RM, QTY PCS, Met. Wt.Gms, and Value US$ -->
+                <h2>Enter Details for RM, QTY PCS, Met. Wt.Gms, and Value US$</h2>
+                <table id="rmTable">
+                    <thead>
+                        <tr>
+                            <th>RM</th>
+                            <th>QTY PCS</th>
+                            <th>Met. Wt.Gms</th>
+                            <th>Value US$</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+
+                <button type="button" class="add-row-btn" id="addRow">Add Row</button>
+
+                <input type="submit" value="Upload">
+            </form>
+        </div>
+    </div>
+
+    <script>
+
+// Star animation
+const canvas = document.getElementById('stars');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const stars = [];
+for (let i = 0; i < 150; i++) {
+    stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height });
+}
+
+function updateStars() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    stars.forEach(star => {
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = 'white';
+        ctx.fill();
+    });
+    requestAnimationFrame(updateStars);
+}
+updateStars();
+
+// Dynamic Table for RM, QTY PCS, Met. Wt.Gms, and Value US$
+const addRowButton = document.getElementById('addRow');
+const rmTable = document.getElementById('rmTable').querySelector('tbody');
+
+addRowButton.addEventListener('click', () => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="text" name="rm[]" placeholder="Enter RM" required></td>
+        <td><input type="number" name="qty_pcs[]" placeholder="Enter QTY PCS"></td> <!-- QTY PCS is optional (no 'required') -->
+        <td><input type="number" step="0.01" name="met_wt_gms[]" placeholder="Enter Met. Wt.Gms" required></td>
+        <td><input type="number" step="0.01" name="value_usd[]" placeholder="Enter Value US$" required></td>
+        <td><button type="button" class="delete-row-btn">Delete</button></td>
+    `;
+    rmTable.appendChild(row);
+
+    row.querySelector('.delete-row-btn').addEventListener('click', () => {
+        row.remove();
+    });
+});
+
+// File info display
+const fileInput = document.getElementById('file');
+fileInput.addEventListener('change', event => {
+    const file = event.target.files[0];
+    if (file) {
+        alert(`Selected file: ${file.name}`);
+    }
+});
+    </script>
+
+</body>
+</html>
