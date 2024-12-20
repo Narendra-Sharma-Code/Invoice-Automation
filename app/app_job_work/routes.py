@@ -753,22 +753,22 @@ def process_file():
 
     for col_idx, value in enumerate(last_row_of_total_values, start=1):  # start=1 for column A
         ws.cell(row=target_row, column=col_idx, value=value)
-    
+        
+    from openpyxl.utils import get_column_letter
     if isinstance(last_row_of_total, pd.Series):
-        # Convert the Series to a list of values
-        last_row_of_total_values = last_row_of_total.tolist()
         
-        # Calculate the index for the last column (using len to find the total number of columns)
-        last_column_index = len(last_row_of_total_values) - 1  # Last column index
-        
-        # Convert index to Excel column letter (e.g., 0 -> 'A', 1 -> 'B', etc.)
-        last_column_letter = chr(64 + last_column_index)  # 65 corresponds to 'A'
-        last_column_letter_for_metal = chr(65 + last_column_index)  # 65 corresponds to 'A'
+        # Calculate the last column index
+        last_column_index = len(last_row_of_total_values)  # Don't subtract 1, just use len() to get the total number of columns
 
-        # Ensure you have the correct target row (replace 'target_row_calculation' with your dynamic row number)
+# Use get_column_letter to correctly convert the index to Excel column letters
+        last_column_letter = get_column_letter(last_column_index)  # This will handle 'A', 'Z', 'AA', 'BZ', etc.
+        last_column_letter_for_metal = get_column_letter(last_column_index)  # Use same logic for the metal column
+
+# Now, setting the cell values correctly
         set_cell(ws, f'{last_column_letter}{target_row_calculation}', "Less: Metal Cost US$", font=BOLD_FONT, alignment=LEFT_ALIGN)
         set_cell(ws, f'{last_column_letter}{target_row_calculation_for_net_realization}', "Net Realization US$", font=BOLD_FONT, alignment=LEFT_ALIGN)
-    
+
+# Further code continues...
     final_output.columns = final_output.columns.str.strip().str.lower()  # Make column names lowercase and strip spaces
 
     # Step 2: Check if 'metal amt.' column exists (case insensitive)

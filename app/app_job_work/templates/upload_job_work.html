@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -61,7 +62,10 @@
             color: #bbb;
         }
 
-        input[type="file"], input[type="text"], input[type="number"], input[type="submit"] {
+        input[type="file"],
+        input[type="text"],
+        input[type="number"],
+        input[type="submit"] {
             width: 100%;
             padding: 15px;
             font-size: 16px;
@@ -73,7 +77,9 @@
             transition: background-color 0.3s ease, transform 0.3s ease;
         }
 
-        input[type="file"]:hover, input[type="text"]:hover, input[type="number"]:hover {
+        input[type="file"]:hover,
+        input[type="text"]:hover,
+        input[type="number"]:hover {
             background: rgba(255, 255, 255, 0.2);
             transform: scale(1.02);
         }
@@ -100,7 +106,8 @@
             margin-top: 40px;
         }
 
-        table th, table td {
+        table th,
+        table td {
             padding: 15px;
             border: 1px solid #444;
             text-align: center;
@@ -113,7 +120,8 @@
             font-weight: bold;
         }
 
-        .add-row-btn, .delete-row-btn {
+        .add-row-btn,
+        .delete-row-btn {
             background: #8a8a8a;
             color: #fff;
             border: none;
@@ -124,7 +132,8 @@
             transition: all 0.3s ease;
         }
 
-        .add-row-btn:hover, .delete-row-btn:hover {
+        .add-row-btn:hover,
+        .delete-row-btn:hover {
             background: #8a8a8a;
         }
 
@@ -172,6 +181,7 @@
         }
     </style>
 </head>
+
 <body>
     <canvas id="stars"></canvas>
 
@@ -192,10 +202,12 @@
                 <input type="text" id="challan_no" name="challan_no" placeholder="Enter Challan No." required>
 
                 <label for="exchange_rate">Exchange Rate</label>
-                <input type="number" step="0.01" id="exchange_rate" name="exchange_rate" placeholder="Enter exchange rate" required>
+                <input type="number" step="0.01" id="exchange_rate" name="exchange_rate"
+                    placeholder="Enter exchange rate" required>
 
                 <label for="invoice_no_date">Invoice No. & Date</label>
-                <input type="text" id="invoice_no_date" name="invoice_no_date" placeholder="Enter invoice number and date" required>
+                <input type="text" id="invoice_no_date" name="invoice_no_date"
+                    placeholder="Enter invoice number and date" required>
 
                 <label for="Exporter_Ref">Exporter's Ref</label>
                 <input type="text" id="Exporter_Ref" name="Exporter_Ref" placeholder="Enter Exporter's Ref" required>
@@ -224,58 +236,59 @@
 
     <script>
 
-// Star animation
-const canvas = document.getElementById('stars');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+        // Star animation
+        const canvas = document.getElementById('stars');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-const stars = [];
-for (let i = 0; i < 150; i++) {
-    stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height });
-}
+        const stars = [];
+        for (let i = 0; i < 150; i++) {
+            stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height });
+        }
 
-function updateStars() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    stars.forEach(star => {
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, 2, 0, Math.PI * 2);
-        ctx.fillStyle = 'white';
-        ctx.fill();
-    });
-    requestAnimationFrame(updateStars);
-}
-updateStars();
+        function updateStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => {
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, 2, 0, Math.PI * 2);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+            });
+            requestAnimationFrame(updateStars);
+        }
+        updateStars();
 
-// Dynamic Table for RM, QTY PCS, Met. Wt.Gms, and Value US$
-const addRowButton = document.getElementById('addRow');
-const rmTable = document.getElementById('rmTable').querySelector('tbody');
+        // Dynamic Table for RM, QTY PCS, Met. Wt.Gms, and Value US$
+        const addRowButton = document.getElementById('addRow');
+        const rmTable = document.getElementById('rmTable').querySelector('tbody');
 
-addRowButton.addEventListener('click', () => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
+        addRowButton.addEventListener('click', () => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
         <td><input type="text" name="rm[]" placeholder="Enter RM" required></td>
         <td><input type="number" name="qty_pcs[]" placeholder="Enter QTY PCS"></td> <!-- QTY PCS is optional (no 'required') -->
         <td><input type="number" step="0.01" name="met_wt_gms[]" placeholder="Enter Met. Wt.Gms" required></td>
         <td><input type="number" step="0.01" name="value_usd[]" placeholder="Enter Value US$" required></td>
         <td><button type="button" class="delete-row-btn">Delete</button></td>
     `;
-    rmTable.appendChild(row);
+            rmTable.appendChild(row);
 
-    row.querySelector('.delete-row-btn').addEventListener('click', () => {
-        row.remove();
-    });
-});
+            row.querySelector('.delete-row-btn').addEventListener('click', () => {
+                row.remove();
+            });
+        });
 
-// File info display
-const fileInput = document.getElementById('file');
-fileInput.addEventListener('change', event => {
-    const file = event.target.files[0];
-    if (file) {
-        alert(`Selected file: ${file.name}`);
-    }
-});
+        // File info display
+        const fileInput = document.getElementById('file');
+        fileInput.addEventListener('change', event => {
+            const file = event.target.files[0];
+            if (file) {
+                alert(`Selected file: ${file.name}`);
+            }
+        });
     </script>
 
 </body>
+
 </html>
