@@ -165,9 +165,15 @@ def process_file():
         cell = ws.cell(row=14, column=col)
         cell.border = DARK_BOTTOM_BORDER
 
-    # Merge columns 5, 6, and 7 in row 10
-    ws.merge_cells('E10:G10')
-    set_cell(ws, 'E10', "Buyer's Ord No. & Date Ref. : 437", font=BOLD_FONT, alignment=LEFT_ALIGN)
+   # Merge columns 5, 6, and 7 in row 10
+    ws.merge_cells('E10:F10')
+    set_cell(ws, 'E10', "Buyer's Ord No. & Date Ref.:", font=BOLD_FONT, alignment=LEFT_ALIGN)
+
+    buyers_ord_no_date = request.form.get('buyers_ord_no_date')
+
+# Merge cells for the actual invoice value (entered from the form)
+    ws.merge_cells('G10:H10')
+    set_cell(ws, 'G10', buyers_ord_no_date, alignment=LEFT_ALIGN)
 
     # Merge columns E, F, and G in row 11
     ws.merge_cells('E11:G11')  # Columns E, F, and G merged
