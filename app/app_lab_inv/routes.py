@@ -72,6 +72,8 @@ def process_file():
  # Get user inputs from the form
     invoice_no = request.form.get('invoice_no', 'Default Invoice')
     exporter_name = request.form.get('exporter_name', 'Default Exporter')
+    request_id = request.form.get('request_id', 'Default request')
+    challon_no = request.form.get('challon_no', 'Default challan')
 
  # Populate dynamic fields
     set_cell(ws, 'E3', f" {invoice_no}", font=BOLD_FONT, alignment=LEFT_ALIGN)
@@ -281,8 +283,7 @@ def process_file():
     set_cell(ws, 'E26',
               f"Labour charges for JOB WORK completed by us for our invoice no: {invoice_no} \n"
               f"against your job work invoice no{exporter_name}.\n"  
-              "Vide REQUEST ID No.  492400120343 Challan no: 8000473")
-
+              f"Vide REQUEST ID No. {request_id} Challan no: {challon_no}")
     start_row = ws.max_row + 2  # Start below the existing formatted data
 
     # First column: "Marks & Nos./ Container No."
@@ -304,7 +305,7 @@ def process_file():
     set_cell(ws, 'B37', 
                 f"Labour charges for JOB WORK completed by us for our invoice no:{invoice_no} \n"
                 f"against your job work invoice no{exporter_name}\n"  
-                "Vide REQUEST ID No.  492400120343 Challan no: 8000473", font=BOLD_FONT, alignment=LEFT_ALIGN)
+                f"Vide REQUEST ID No. {request_id} Challan no: {challon_no}"), font=BOLD_FONT, alignment=LEFT_ALIGN)
 
     ws.merge_cells('B60:B61')
     set_cell(ws,'B60',
