@@ -78,6 +78,8 @@ def process_file():
  # Populate dynamic fields
     set_cell(ws, 'E3', f" {invoice_no}", font=BOLD_FONT, alignment=LEFT_ALIGN)
     set_cell(ws, 'H3', f"{exporter_name}", font=BOLD_FONT, alignment=LEFT_ALIGN)
+    request_id = request.form.get('request_id', 'Default request')
+    challon_no = request.form.get('challon_no', 'Default challan')
  # Adding a horizontal bold bottom border between Row 5 and Row 6 from Column D to P
     for col in range(4, 16):  # Columns D (4) to P (16)
         cell = ws.cell(row=6, column=col)
@@ -283,7 +285,9 @@ def process_file():
     set_cell(ws, 'E26',
               f"Labour charges for JOB WORK completed by us for our invoice no: {invoice_no} \n"
               f"against your job work invoice no{exporter_name}.\n"  
-              f"Vide REQUEST ID No. {request_id} Challan no: {challon_no}")
+              f"Vide REQUEST ID No. {request_id} Challan no: {challon_no}")    
+    
+
     start_row = ws.max_row + 2  # Start below the existing formatted data
 
     # First column: "Marks & Nos./ Container No."
@@ -304,8 +308,10 @@ def process_file():
     ws.merge_cells('B37:B39')
     set_cell(ws, 'B37', 
                 f"Labour charges for JOB WORK completed by us for our invoice no:{invoice_no} \n"
+
                 f"against your job work invoice no{exporter_name}\n"  
                 f"Vide REQUEST ID No. {request_id} Challan no: {challon_no}", font=BOLD_FONT, alignment=LEFT_ALIGN)
+
 
     ws.merge_cells('B60:B61')
     set_cell(ws,'B60',

@@ -735,12 +735,12 @@ def process_file():
     diamond_wt = diamond_value = diamond_qty = CS_wt = CS_value = CS_qty = 0
     for i, row in diamond_stone_table.iterrows():
         if row['Ctg'] == 'D':
-            diamond_wt = (row['Inv Rm Wt'])
-            diamond_value = (row['Inv Value'])
+            diamond_wt = round(row['Inv Rm Wt'], 3)
+            diamond_value = round(row['Inv Value'],2)
             diamond_qty = (row['Inv Rm Qty'])
         elif row['Ctg'] == 'C':
-            CS_wt = (row['Inv Rm Wt'])
-            CS_value = (row['Inv Value'])
+            CS_wt = round(row['Inv Rm Wt'],3)
+            CS_value = round(row['Inv Value'],2)
             CS_qty = (row['Inv Rm Qty'])
    
    # Adding "Type", "PCS", "Total CTW", "Net Payable by You"
@@ -777,11 +777,12 @@ def process_file():
         # Calculate the last column index
         last_column_index = len(last_row_of_total_values)  # Don't subtract 1, just use len() to get the total number of columns
 
-# Use get_column_letter to correctly convert the index to Excel column letters
+        # Use get_column_letter to correctly convert the index to Excel column letters
         last_column_letter = get_column_letter(last_column_index)  # This will handle 'A', 'Z', 'AA', 'BZ', etc.
         last_column_letter_for_metal = get_column_letter(last_column_index)  # Use same logic for the metal column
 
-# Now, setting the cell values correctly
+
+        # Now, setting the cell values correctly
         set_cell(ws, f'{last_column_letter}{target_row_calculation}', "Less: Metal Cost US$", font=BOLD_FONT, alignment=LEFT_ALIGN)
         set_cell(ws, f'{last_column_letter}{target_row_calculation_for_net_realization}', "Net Realization US$", font=BOLD_FONT, alignment=LEFT_ALIGN)
 
@@ -825,7 +826,7 @@ def process_file():
         ws[f'C{table + 2}'].font = BOLD_FONT
         ws[f'C{table + 2}'].alignment = LEFT_ALIGN
 
-        total_rm_wt_table = diamond_wt + CS_wt
+        total_rm_wt_table = round(diamond_wt + CS_wt,3)
         ws[f'C{table + 3}'] = total_rm_wt_table 
         ws[f'C{table + 3}'].font = BOLD_FONT
         ws[f'C{table + 3}'].alignment = LEFT_ALIGN
@@ -845,7 +846,7 @@ def process_file():
             ws[f'D{table + 2}'].alignment = LEFT_ALIGN
 
 
-            total_inv_value_table = diamond_value + CS_value
+            total_inv_value_table = round(diamond_value + CS_value,2)
             ws[f'D{table + 3}'] = total_inv_value_table 
             ws[f'D{table + 3}'].font = BOLD_FONT
             ws[f'D{table + 3}'].alignment = LEFT_ALIGN
@@ -856,17 +857,17 @@ def process_file():
     if 'Labour' in df.columns:
         try:
             df['Labour'] = pd.to_numeric(df['Labour'], errors='coerce')
-            labour_sum = df['Labour'].sum(skipna=True)
+            labour_sum = round(df['Labour'].sum(skipna=True),2)
             ws[f'B{table + 8}'] = labour_sum
         except Exception as e:
             print(f"Error processing 'Labour': {e}")
     else:
         labour_sum = 0
-        print("No 'Labour' column found. Setting labour_sum to 0.")
+        print("No 'Labour' column found. Setting labour_sum to 0.")
 
     # Calculate table total
     
-    table_total = diamond_value + CS_value + labour_sum
+    table_total = round(diamond_value + CS_value + labour_sum,2)
     ws[f'B{table + 9}'] = table_total  # Write total to the cell
 
     # Split the number into dollars and cents
