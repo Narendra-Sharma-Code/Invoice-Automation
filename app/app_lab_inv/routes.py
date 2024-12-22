@@ -305,7 +305,7 @@ def process_file():
     set_cell(ws, 'B37', 
                 f"Labour charges for JOB WORK completed by us for our invoice no:{invoice_no} \n"
                 f"against your job work invoice no{exporter_name}\n"  
-                f"Vide REQUEST ID No. {request_id} Challan no: {challon_no}"), font=BOLD_FONT, alignment=LEFT_ALIGN)
+                f"Vide REQUEST ID No. {request_id} Challan no: {challon_no}", font=BOLD_FONT, alignment=LEFT_ALIGN)
 
     ws.merge_cells('B60:B61')
     set_cell(ws,'B60',
