@@ -709,6 +709,17 @@ def process_file():
     ws['F29'] = challan_no_value  # Assign the Challan No. value
     ws['F29'].alignment = Alignment(horizontal='left', vertical='top', wrap_text=False)  # Align left and prevent wrap
     
+    # Get the input value for request_id .
+    request_id = request.form.get('request_id', '')
+
+    # Add "request_id." header at row 28, column E
+    ws['E28'] = "Request id."
+    ws['E28'].font = Font(bold=True)  # Make the header bold
+    ws['E28'].alignment = Alignment(horizontal='left', vertical='top', wrap_text=False)  # Align left and prevent wrap
+
+    # Print the value of the request_id . in the next column (F28)
+    ws['F28'] = request_id  # Assign the Challan No. value
+    ws['F28'].alignment = Alignment(horizontal='left', vertical='top', wrap_text=False)  # Align left and prevent wrap
 
 
     # Calculate where to print the exchange rate
