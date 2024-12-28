@@ -449,7 +449,7 @@ def process_file():
         ws.column_dimensions[col_letter].width = 15  # Adjust as needed for clarity
     
     
-    output_header = [cell.value.strip() for cell in ws[33]]
+    output_header = [cell.value.strip() for cell in ws[33] if cell.value]
    
   # Load the parsed data
     df = pd.read_excel(input_file, header=3)
@@ -604,6 +604,8 @@ def process_file():
     qty_pcs_list = request.form.getlist('qty_pcs[]')  
     met_wt_gms_list = request.form.getlist('met_wt_gms[]')
     value_usd_list = request.form.getlist('value_usd[]')
+    rate_per_grams_list = request.form.getlist('rate[]')
+    
 
     # Insert Headers for RM, QTY PCS, Met. Wt.Gms, and Value US$ with bold font
     headers_row_number = last_row + 5  # Place the headers right after the mapping section
@@ -621,15 +623,20 @@ def process_file():
         ws.cell(row=headers_row_number, column=2).font = Font(bold=True)  
         met_wt_gms_col = 3  # Met. Wt.Gms will be in column 3
         value_usd_col = 4  # Value US$ will be in column 4
+        rate_per_grams_col = 5
     else:
         met_wt_gms_col = 2  # Met. Wt.Gms will be in column 2 if QTY PCS does not exist
         value_usd_col = 3  # Value US$ will be in column 3 if QTY PCS does not exist
-
+        rate_per_grams_col = 4
+        
     ws.cell(row=headers_row_number, column=met_wt_gms_col, value="Met. Wt.Gms")
     ws.cell(row=headers_row_number, column=met_wt_gms_col).font = Font(bold=True)  # Make the text bold
 
     ws.cell(row=headers_row_number, column=value_usd_col, value="Value US$")
     ws.cell(row=headers_row_number, column=value_usd_col).font = Font(bold=True)  # Make the text bold
+   
+    ws.cell(row=headers_row_number, column=rate_per_grams_col, value="Rate per Grams")
+    ws.cell(row=headers_row_number, column=rate_per_grams_col).font = Font(bold=True)  # Make the text bold
     
     # Step 3: Insert RM, QTY PCS, Met. Wt.Gms, and Value US$ Data Below the Headers
     data_start_row = headers_row_number + 1  # Row immediately after the headers
@@ -642,6 +649,8 @@ def process_file():
         qty_pcs = float(qty_pcs_list[i]) if qty_pcs_list[i] else 0  # Get QTY PCS value or default to 0
         met_wt_gms = float(met_wt_gms_list[i]) if met_wt_gms_list[i] else 0
         value_usd = float(value_usd_list[i]) if value_usd_list[i] else 0
+        rate = float(rate_per_grams_list[i]) if rate_per_grams_list[i] else 0
+        
     
     # Write data to the worksheet
         ws.cell(row=data_start_row + i, column=1, value=rm).alignment = LEFT_ALIGN
@@ -652,6 +661,7 @@ def process_file():
     # Write Met. Wt.Gms and Value US$
         ws.cell(row=data_start_row + i, column=met_wt_gms_col, value=met_wt_gms).alignment = LEFT_ALIGN
         ws.cell(row=data_start_row + i, column=value_usd_col, value=value_usd).alignment = LEFT_ALIGN
+        ws.cell(row=data_start_row + i, column=rate_per_grams_col, value=rate).alignment = LEFT_ALIGN
 
     # Add to the totals
         total_qty_pcs += qty_pcs
@@ -677,6 +687,31 @@ def process_file():
     cell = ws.cell(row=last_data_row + 1, column=value_usd_col, value=total_value_usd)
     cell.alignment = LEFT_ALIGN  # Set left alignment
     cell.font = Font(bold=True)  # Set bold font
+   
+   # Form input
+    rm_list_for_present_ppl = request.form.getlist('rm[]')  # Ensure it's a list
+    rm_list_for_present_ppl = [rm.strip() for rm in rm_list_for_present_ppl]  # Strip any whitespace
+
+    # Calculate row positions
+    last_data_row_of_chalan = last_data_row + 2  # Last row where chalan ends
+    headers_row_for_present_ppl = last_data_row_of_chalan + 6  # Header row
+    data_start_row_for_present_ppl = headers_row_for_present_ppl + 1  # Row after headers
+
+    # Write headers
+    ws.cell(row=headers_row_for_present_ppl, column=1, value="RM.")
+    ws.cell(row=headers_row_for_present_ppl, column=1).font = Font(bold=True)
+
+    ws.cell(row=headers_row_for_present_ppl, column=2, value="Met. Wt.Gms")
+    ws.cell(row=headers_row_for_present_ppl, column=2).font = Font(bold=True)
+
+    ws.cell(row=headers_row_for_present_ppl, column=3, value="Value US$")
+    ws.cell(row=headers_row_for_present_ppl, column=3).font = Font(bold=True)
+
+    # Write data
+    for i, rm_for_present_ppl in enumerate(rm_list_for_present_ppl):
+        ws.cell(row=data_start_row_for_present_ppl + i, column=1, value=rm_for_present_ppl).alignment = LEFT_ALIGN
+  
+    
     
         
     # Get the input without forcing it into a string
@@ -723,7 +758,8 @@ def process_file():
 
 
     # Calculate where to print the exchange rate
-    table = last_data_row + 8
+    last_data_row_of_present_ppl = data_start_row_for_present_ppl + len(rm_list_for_present_ppl) - 1
+    table = last_data_row_of_present_ppl + 8
     exchange_rate_row_number = table + 17 # Add a 5-line gap (3 for data, 2 for space)
 
     diamond_stone_table = df.loc[df['Ctg'].isin(['C','D'])].groupby(["Ctg"], dropna=False).agg({
@@ -762,7 +798,6 @@ def process_file():
     set_cell(ws, f'A{table + 9}', "Grand Total", font=BOLD_FONT, alignment=LEFT_ALIGN)
     set_cell(ws, f'A{table + 3}', "Grand Total", font=BOLD_FONT, alignment=LEFT_ALIGN)
     
-   
     target_row = table + 11  # Replace 'table' with your variable's actual value
     target_row_calculation = target_row + 1
     target_row_calculation_for_net_realization =  target_row_calculation + 1

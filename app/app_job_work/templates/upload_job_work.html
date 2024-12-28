@@ -187,7 +187,7 @@
 
     <div class="container">
         <div class="upload-container">
-            <h1>Upload Your Packing List File</h1>
+            <h1>Upload Your Job Work PPL File</h1>
             <form action="{{ url_for('app_job_work.process_file') }}" method="post" enctype="multipart/form-data">
                 <!-- File Upload Section -->
                 <div class="file-input-container">
@@ -221,7 +221,7 @@
                     placeholder="Enter Buyer's Ord No. & Date Ref." required>
 
                 <!-- Dynamic Table for RM, QTY PCS, Met. Wt.Gms, and Value US$ -->
-                <h2>Enter Details for RM, QTY PCS, Met. Wt.Gms, and Value US$</h2>
+                <h2>Enter Details for RM, QTY PCS, Met. Wt.Gms, Value US$ and Rate per Grams</h2>
                 <table id="rmTable">
                     <thead>
                         <tr>
@@ -229,6 +229,7 @@
                             <th>QTY PCS</th>
                             <th>Met. Wt.Gms</th>
                             <th>Value US$</th>
+                            <th>Rate per Grams</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -278,6 +279,7 @@
         <td><input type="number" name="qty_pcs[]" placeholder="Enter QTY PCS" step="any"></td> <!-- Allows any decimal value -->
         <td><input type="number" step="any" name="met_wt_gms[]" placeholder="Enter Met. Wt.Gms" required></td> <!-- Allows any decimal value -->
         <td><input type="number" step="any" name="value_usd[]" placeholder="Enter Value US$" required></td> <!-- Allows any decimal value -->
+        <td><input type="number" step="any" name="rate[]" placeholder="Rate per Grams" required></td> <!-- Allows any decimal value -->
         <td><button type="button" class="delete-row-btn">Delete</button></td>
     `;
             rmTable.appendChild(row);
