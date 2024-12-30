@@ -465,6 +465,10 @@ def process_file():
         'Gross Wt', 'DsgCtg', 'Karatage', 'Inv Pure Wt', 
         'Inv Rate', 'Inv Value', 'Labour', 'Qty'
     ]
+    
+    
+
+
 # Check for missing columns and add them with default value of 0
     for col in required_columns:
         if col not in df.columns:
@@ -707,12 +711,79 @@ def process_file():
     ws.cell(row=headers_row_for_present_ppl, column=3, value="Value US$")
     ws.cell(row=headers_row_for_present_ppl, column=3).font = Font(bold=True)
 
-    # Write data
+    ws.cell(row=headers_row_for_present_ppl, column=4, value="Inv Pure Wt")
+    ws.cell(row=headers_row_for_present_ppl, column=4).font = Font(bold=True)
+
+    
+    required_columns_for_reco = ['Inv Rate','Inv Pure Wt','Inv Rm Wt','Inv Value']
+    # Check for missing columns and add them with default value of 0
+    for col in required_columns_for_reco:
+        if col not in df.columns:
+            df[col] = 0  # Add the missing column with default value 0
+    
+    
+    # Ensure lengths match
+    if len(rate_per_grams_list) < len(df):
+        # Extend the list with default values (e.g., 0) if it's shorter
+        rate_per_grams_list.extend([0] * (len(df) - len(rate_per_grams_list)))
+    elif len(rate_per_grams_list) > len(df):
+        # Trim the list if it's longer
+        rate_per_grams_list = rate_per_grams_list[:len(df)]
+
+    df['Rate'] = [float(rate) if rate else 0 for rate in rate_per_grams_list]
+
+    # Ensure 'Inv Rate' is numeric and rounded
+    df['Inv Rate'] = pd.to_numeric(df['Inv Rate'], errors='coerce').round(3)
+
+    # Convert rate_per_grams_list to a list of rounded float values
+    rate_list = [round(float(rate), 3) for rate in rate_per_grams_list if rate]
+
+
+        # Check if rate_list is valid and not empty
+    if rate_list:
+        # Filter rows where 'Inv Rate' matches any value in rate_list
+        filtered_df = df[df['Inv Rate'].isin(rate_list)]
+
+        # Check the filtered DataFrame
+        print("Filtered DataFrame:")
+        print(filtered_df)
+
+        # If there are matching rows, perform groupby
+        if not filtered_df.empty:
+            grouped_for_reco = (
+                filtered_df.groupby(["Inv Rate"], dropna=False)
+                .agg({
+                    "Inv Rm Wt": "sum",
+                    "Inv Pure Wt": "sum",
+                    "Inv Value": "sum"
+                })
+                .reset_index()
+            )
+
+            # Round the grouped values
+            grouped_for_reco[["Inv Rate", "Inv Rm Wt", "Inv Pure Wt", "Inv Value"]] = (
+                grouped_for_reco[["Inv Rate", "Inv Rm Wt", "Inv Pure Wt", "Inv Value"]].round(3)
+            )
+
+     # Reorder Grouped DataFrame based on the input rate_per_grams_list
+    ordered_rates = [round(float(rate), 3) for rate in rate_per_grams_list if rate]  # Ensure rates are rounded
+    grouped_for_reco = grouped_for_reco.set_index("Inv Rate")  # Set "Inv Rate" as the index
+    grouped_for_reco = grouped_for_reco.loc[ordered_rates].reset_index()  # Reorder by ordered_rates and reset index
+
+    # Write data rows
     for i, rm_for_present_ppl in enumerate(rm_list_for_present_ppl):
         ws.cell(row=data_start_row_for_present_ppl + i, column=1, value=rm_for_present_ppl).alignment = LEFT_ALIGN
-  
-    
-    
+        ws.cell(row=data_start_row_for_present_ppl + i, column=2, value=grouped_for_reco.loc[i, "Inv Rm Wt"]).alignment = LEFT_ALIGN
+        ws.cell(row=data_start_row_for_present_ppl + i, column=3, value=grouped_for_reco.loc[i, "Inv Value"]).alignment = LEFT_ALIGN
+        ws.cell(row=data_start_row_for_present_ppl + i, column=4, value=grouped_for_reco.loc[i, "Inv Pure Wt"]).alignment = LEFT_ALIGN
+
+    # Add "Total" row
+    total_row_index = len(rm_list_for_present_ppl)  # Position for "Total" row
+    ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=1, value="Total").alignment = LEFT_ALIGN
+    ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=2, value=grouped_for_reco["Inv Rm Wt"].sum()).alignment = LEFT_ALIGN
+    ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=3, value=grouped_for_reco["Inv Value"].sum()).alignment = LEFT_ALIGN
+    ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=4, value=grouped_for_reco["Inv Pure Wt"].sum()).alignment = LEFT_ALIGN
+            
         
     # Get the input without forcing it into a string
     banker_detail_value = request.form.get('Banker_details', '')
