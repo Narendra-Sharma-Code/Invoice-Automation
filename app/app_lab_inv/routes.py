@@ -74,12 +74,17 @@ def process_file():
     exporter_name = request.form.get('exporter_name', 'Default Exporter')
     request_id = request.form.get('request_id', 'Default request')
     challon_no = request.form.get('challon_no', 'Default challan')
-
+    Buyer_ord_no = request.form.get('Buyer_ord_no', 'Default Buyer ord no')
+    
  # Populate dynamic fields
     set_cell(ws, 'E3', f" {invoice_no}", font=BOLD_FONT, alignment=LEFT_ALIGN)
     set_cell(ws, 'H3', f"{exporter_name}", font=BOLD_FONT, alignment=LEFT_ALIGN)
-    request_id = request.form.get('request_id', 'Default request')
-    challon_no = request.form.get('challon_no', 'Default challan')
+    set_cell(ws, 'G8', f"{Buyer_ord_no}", font=BOLD_FONT, alignment=LEFT_ALIGN)
+    
+     # Merge columns 5, 6, and 7 in row 10
+    ws.merge_cells('E8:F8')
+    set_cell(ws, 'E8', "Buyer's Ord No. & Date Ref.", font=BOLD_FONT, alignment=LEFT_ALIGN)
+    
  # Adding a horizontal bold bottom border between Row 5 and Row 6 from Column D to P
     for col in range(4, 16):  # Columns D (4) to P (16)
         cell = ws.cell(row=6, column=col)
@@ -134,9 +139,7 @@ def process_file():
     ws.merge_cells('E7:G7')
     set_cell(ws, 'E7', "Ref No:-IN/23/JBW/177", font=BOLD_FONT, alignment=LEFT_ALIGN)
 
-    # Merge columns 5, 6, and 7 in row 10
-    ws.merge_cells('E8:G8')
-    set_cell(ws, 'E8', "Buyer's Ord No. & Date Ref.", font=BOLD_FONT, alignment=LEFT_ALIGN)
+   
     
     # Adding a bold bottom border between row 9 and 10, from column E to P
     for col in range(5, 17):  # Columns D (4) to P (16)
@@ -280,13 +283,18 @@ def process_file():
     ws.merge_cells('E24:G24')  # Merge columns E, F, and G in row 24
     set_cell(ws, 'E24', " Job-Work-Return: ", font=None, alignment=LEFT_ALIGN)
 
+    # Merge cells
+    ws.merge_cells('E26:P29')
 
-    ws.merge_cells('E26:k26')
-    set_cell(ws, 'E26',
-              f"Labour charges for JOB WORK completed by us for our invoice no: {invoice_no} \n"
-              f"against your job work invoice no{exporter_name}.\n"  
-              f"Vide REQUEST ID No. {request_id} Challan no: {challon_no}")    
-    
+    # Set the cell content with text wrapping and center alignment
+    cell = ws['E26']
+    cell.value = (
+        f"Labour charges for JOB WORK completed by us for our invoice no: {invoice_no} \n"
+        f"against your job work invoice no {exporter_name}.\n"
+        f"Vide REQUEST ID No. {request_id} Challan no: {challon_no}"
+    )
+    cell.alignment = Alignment(wrap_text=True, vertical='center', horizontal='center')
+
 
     start_row = ws.max_row + 2  # Start below the existing formatted data
 
@@ -308,22 +316,24 @@ def process_file():
     ws.merge_cells('B37:B39')
     set_cell(ws, 'B37', 
                 f"Labour charges for JOB WORK completed by us for our invoice no:{invoice_no} \n"
-
                 f"against your job work invoice no{exporter_name}\n"  
-                f"Vide REQUEST ID No. {request_id} Challan no: {challon_no}", font=BOLD_FONT, alignment=LEFT_ALIGN)
-
+                f"Vide REQUEST ID No.{request_id} Challan no:{challon_no}", font=BOLD_FONT, alignment=LEFT_ALIGN)
 
     ws.merge_cells('B60:B61')
     set_cell(ws,'B60',
              "EQUI Amount -Rs 258839.58\n "
              "Conv Rate         82.20 ",font=BOLD_FONT, alignment=LEFT_ALIGN)
-  
+    
+    
     set_cell(ws, 'D33', "Total PCS", font=BOLD_FONT, alignment=LEFT_ALIGN)
     set_cell(ws, 'D62', "0", font=BOLD_FONT, alignment=LEFT_ALIGN)
 
-    set_cell(ws, 'E33', "Value IN US$", font=BOLD_FONT, alignment=LEFT_ALIGN)
-    set_cell(ws, 'E62', " $-   ", font=BOLD_FONT, alignment=LEFT_ALIGN)
+    ws.merge_cells('O33:P33')
+    set_cell(ws, 'O33', "Value IN US$", font=BOLD_FONT, alignment=LEFT_ALIGN)
+    set_cell(ws, 'N62', " $-   ", font=BOLD_FONT, alignment=LEFT_ALIGN)
 
+    ws.merge_cells('G33:H33')
+    set_cell(ws, 'G33', "Value IN INR", font=BOLD_FONT, alignment=LEFT_ALIGN)
 
     ws.merge_cells('A64:D64')
     set_cell(ws, 'A64', ("Amount Chargable -(in Words)-US$ Three Thousand One Hundred Forty Eight and Cent Ninety Only"),font=BOLD_FONT, alignment=LEFT_ALIGN)
@@ -378,9 +388,9 @@ def process_file():
     # Open the output file and update cell E62
     wb = load_workbook(output_file)
     ws = wb.active
-    ws['E62'] = labour_sum  # Place the sum in cell E62
+    ws['O62'] = labour_sum  # Place the sum in cell E62
     wb.save(output_file)
-    print(f"Total placed at E62 and file saved as '{output_file}'.")
+    print(f"Total placed at O62 and file saved as '{output_file}'.")
     print(f"Expected Sum: {3148.9}, Calculated Sum: {labour_sum}")
 
 

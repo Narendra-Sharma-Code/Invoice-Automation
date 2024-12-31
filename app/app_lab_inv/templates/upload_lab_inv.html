@@ -19,13 +19,18 @@
             color: #eaeaea;
             display: flex;
             justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0 20px;
+            overflow-x: hidden;
+        }
+
+        html {
+            overflow-y: auto;
         }
 
         canvas {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
@@ -35,13 +40,14 @@
 
         .container {
             text-align: center;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.8);
             padding: 50px 70px;
             border-radius: 20px;
-            box-shadow: 0 20px 30px rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8), 0 0 50px rgba(255, 255, 255, 0.1);
             max-width: 600px;
-            width: 90%;
+            width: 100%;
+            margin: 50px 0;
             animation: fadeIn 1s ease forwards;
         }
 
@@ -58,11 +64,25 @@
         }
 
         h1 {
-            font-size: 3rem;
+            font-size: 2rem;
             color: #8a8a8a;
-            text-shadow: 0px 0px 10px #2b2c2c, 0px 0px 20px #222323;
+            text-shadow: 0px 0px 20px #3b3b3b, 0px 0px 40px #2b2b2b;
             margin-bottom: 40px;
             font-weight: bold;
+            position: relative;
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: -10px;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 4px;
+            background: #8a8a8a;
+            border-radius: 2px;
+            box-shadow: 0 0 15px #8a8a8a, 0 0 30px #8a8a8a;
         }
 
         form {
@@ -73,21 +93,39 @@
 
         label {
             display: block;
-            background-color: #8a8a8a;
-            color: #fff;
+            position: relative;
             padding: 15px 40px;
             font-size: 1.2rem;
+            color: #fff;
+            background: linear-gradient(135deg, #8a8a8a, #6b6b6b);
             border-radius: 30px;
-            text-align: center;
             cursor: pointer;
-            transition: 0.3s;
+            overflow: hidden;
             text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        label::before {
+            
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 200%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: skewX(-30deg);
+            transition: left 0.5s ease;
+        }
+
+        label:hover::before {
+            left: 100%;
         }
 
         label:hover {
-            background-color: #7a7a7a;
+            background: #7a7a7a;
+            box-shadow: 0 0 20px #8a8a8a, 0 0 40px #6b6b6b;
             transform: translateY(-5px);
-            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.5);
         }
 
         input[type="file"] {
@@ -95,7 +133,6 @@
         }
 
         input[type="text"] {
-            width: 100%;
             padding: 15px 20px;
             font-size: 1rem;
             border: 2px solid #8a8a8a;
@@ -103,43 +140,56 @@
             background: transparent;
             color: #eaeaea;
             outline: none;
-            transition: 0.3s;
+            transition: border 0.3s ease, box-shadow 0.3s ease;
+            width: 100%;
         }
 
         input[type="text"]:focus {
             border-color: #7a7a7a;
-            box-shadow: 0 0 10px #8a8a8a;
+            box-shadow: 0 0 10px #8a8a8a, 0 0 20px #6b6b6b;
         }
 
         input[type="submit"] {
             display: inline-block;
-            background: #8a8a8a;
-            color: #fff;
-            padding: 20px 40px;
+            position: relative;
+            padding: 15px 40px;
             font-size: 1.2rem;
             font-weight: bold;
             text-transform: uppercase;
-            border-radius: 50px;
+            color: #fff;
+            background: #8a8a8a;
+            border-radius: 30px;
             border: none;
             cursor: pointer;
             transition: all 0.3s ease;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        input[type="submit"]::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 200%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: skewX(-30deg);
+            transition: left 0.5s ease;
+        }
+
+        input[type="submit"]:hover::before {
+            left: 100%;
         }
 
         input[type="submit"]:hover {
             background: #7a7a7a;
+            box-shadow: 0 0 20px #8a8a8a, 0 0 40px #6b6b6b;
             transform: translateY(-5px);
-            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.5);
         }
 
         input[type="submit"]:active {
             transform: scale(0.95);
-        }
-
-        p {
-            font-size: 1rem;
-            color: #bbb;
-            text-align: center;
-            margin-top: 15px;
         }
 
         #file-name {
@@ -155,7 +205,7 @@
     <canvas id="stars"></canvas>
 
     <div class="container">
-        <h1>Upload Packing List</h1>
+        <h1>Upload PPL for Labour Invoice</h1>
         <form action="{{ url_for('app_lab_inv.process_file') }}" method="post" enctype="multipart/form-data">
             <label for="file-upload">Choose File</label>
             <input id="file-upload" type="file" name="file" required>
@@ -163,6 +213,7 @@
             <input type="text" id="exporter_name" name="exporter_name" placeholder="Exporter Name" required>
             <input type="text" id="request_id" name="request_id" placeholder="Request Id." required>
             <input type="text" id="challon_no" name="challon_no" placeholder="Challan No." required>
+            <input type="text" id="Buyer_ord_no" name="Buyer_ord_no" placeholder="Buyer's Ord No. & Date Ref." required>
             <input type="submit" value="Upload">
             <p id="file-name">No file chosen</p>
         </form>
