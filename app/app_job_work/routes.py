@@ -740,7 +740,7 @@ def process_file():
 
 
         # Check if rate_list is valid and not empty
-    if rate_list:
+    if rate_per_grams_list:
         # Filter rows where 'Inv Rate' matches any value in rate_list
         filtered_df = df[df['Inv Rate'].isin(rate_list)]
 
@@ -750,7 +750,7 @@ def process_file():
 
         # If there are matching rows, perform groupby
         if not filtered_df.empty:
-            grouped_for_reco = (
+            group_for_reconciliation = (
                 filtered_df.groupby(["Inv Rate"], dropna=False)
                 .agg({
                     "Inv Rm Wt": "sum",
@@ -761,28 +761,28 @@ def process_file():
             )
 
             # Round the grouped values
-            grouped_for_reco[["Inv Rate", "Inv Rm Wt", "Inv Pure Wt", "Inv Value"]] = (
-                grouped_for_reco[["Inv Rate", "Inv Rm Wt", "Inv Pure Wt", "Inv Value"]].round(3)
+            group_for_reconciliation[["Inv Rate", "Inv Rm Wt", "Inv Pure Wt", "Inv Value"]] = (
+                group_for_reconciliation[["Inv Rate", "Inv Rm Wt", "Inv Pure Wt", "Inv Value"]].round(3)
             )
 
      # Reorder Grouped DataFrame based on the input rate_per_grams_list
     ordered_rates = [round(float(rate), 3) for rate in rate_per_grams_list if rate]  # Ensure rates are rounded
-    grouped_for_reco = grouped_for_reco.set_index("Inv Rate")  # Set "Inv Rate" as the index
-    grouped_for_reco = grouped_for_reco.loc[ordered_rates].reset_index()  # Reorder by ordered_rates and reset index
+    group_for_reconciliation = group_for_reconciliation.set_index("Inv Rate")  # Set "Inv Rate" as the index
+    group_for_reconciliation = group_for_reconciliation.loc[ordered_rates].reset_index()  # Reorder by ordered_rates and reset index
 
     # Write data rows
     for i, rm_for_present_ppl in enumerate(rm_list_for_present_ppl):
         ws.cell(row=data_start_row_for_present_ppl + i, column=1, value=rm_for_present_ppl).alignment = LEFT_ALIGN
-        ws.cell(row=data_start_row_for_present_ppl + i, column=2, value=grouped_for_reco.loc[i, "Inv Rm Wt"]).alignment = LEFT_ALIGN
-        ws.cell(row=data_start_row_for_present_ppl + i, column=3, value=grouped_for_reco.loc[i, "Inv Value"]).alignment = LEFT_ALIGN
-        ws.cell(row=data_start_row_for_present_ppl + i, column=4, value=grouped_for_reco.loc[i, "Inv Pure Wt"]).alignment = LEFT_ALIGN
+        ws.cell(row=data_start_row_for_present_ppl + i, column=2, value=group_for_reconciliation.loc[i, "Inv Rm Wt"]).alignment = LEFT_ALIGN
+        ws.cell(row=data_start_row_for_present_ppl + i, column=3, value=group_for_reconciliation.loc[i, "Inv Value"]).alignment = LEFT_ALIGN
+        ws.cell(row=data_start_row_for_present_ppl + i, column=4, value=group_for_reconciliation.loc[i, "Inv Pure Wt"]).alignment = LEFT_ALIGN
 
     # Add "Total" row
     total_row_index = len(rm_list_for_present_ppl)  # Position for "Total" row
     ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=1, value="Total").alignment = LEFT_ALIGN
-    ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=2, value=grouped_for_reco["Inv Rm Wt"].sum()).alignment = LEFT_ALIGN
-    ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=3, value=grouped_for_reco["Inv Value"].sum()).alignment = LEFT_ALIGN
-    ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=4, value=grouped_for_reco["Inv Pure Wt"].sum()).alignment = LEFT_ALIGN
+    ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=2, value=group_for_reconciliation["Inv Rm Wt"].sum()).alignment = LEFT_ALIGN
+    ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=3, value=group_for_reconciliation["Inv Value"].sum()).alignment = LEFT_ALIGN
+    ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=4, value=group_for_reconciliation["Inv Pure Wt"].sum()).alignment = LEFT_ALIGN
             
         
     # Get the input without forcing it into a string
@@ -829,8 +829,8 @@ def process_file():
 
 
     # Calculate where to print the exchange rate
-    last_data_row_of_present_ppl = data_start_row_for_present_ppl + len(rm_list_for_present_ppl) - 1
-    table = last_data_row_of_present_ppl + 8
+    last_data_row_of_present_ppl = data_start_row_for_present_ppl + total_row_index + 3
+    table = last_data_row_of_present_ppl + 10
     exchange_rate_row_number = table + 17 # Add a 5-line gap (3 for data, 2 for space)
 
     diamond_stone_table = df.loc[df['Ctg'].isin(['C','D'])].groupby(["Ctg"], dropna=False).agg({
