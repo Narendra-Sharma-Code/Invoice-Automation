@@ -1,9 +1,18 @@
 from flask import Flask, render_template
 from app.app_job_work.routes import app_job_work
 from app.app_lab_inv.routes import app_lab_inv
+from app.extensions import mysql
 
 def create_app():
     app = Flask(__name__)
+
+    # MySQL Configuration
+    app.config['MYSQL_HOST'] = 'localhost'       
+    app.config['MYSQL_USER'] = 'root'   
+    app.config['MYSQL_PASSWORD'] = 'N@rendr@9702355153'
+    app.config['MYSQL_DB'] = 'invoice_db'   
+    
+    mysql.init_app(app)  # Initialize MySQL with the app
 
     # Register blueprints for app_job_work and app_lab_inv
     app.register_blueprint(app_job_work, url_prefix='/app_job_work')

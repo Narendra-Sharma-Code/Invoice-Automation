@@ -1,25 +1,23 @@
-from flask import Flask, send_file
-from flask import Blueprint, render_template,request,redirect, url_for
+from flask import Flask, send_file,jsonify
+from flask import Blueprint, render_template, request, send_file
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, Border, Side   
 from openpyxl import load_workbook
-from fuzzywuzzy import fuzz, process
 import re
 import os
-import io
 import pandas as pd
-from . import constants 
-import pdb
+from . import constants
 from num2words import num2words
-
+from app.extensions import mysql  # Import mysql from extensions
+import json
 
 # app_job_work = Flask(__name__)
-
 app_job_work = Blueprint('app_job_work', __name__, template_folder='templates')
-
+    
 # Ensure the output directory exists
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__),"outputs")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
 
 # Styles for the Excel file
 BOLD_FONT = Font(bold=True, size=12)
@@ -33,7 +31,6 @@ DARK_BOTTOM_EXTENDED_BORDER = Border(bottom=Side(style='medium'), right=Side(sty
 VERTICAL_BOLD_BORDER = Border(left=Side(style='medium'))  # For bold vertical borders
 WRAP_TEXT_ALIGN = Alignment(wrap_text=True)  # To wrap the paragraph text
 
-
 # Helper function to set cell value, style, and borders
 def set_cell(ws, cell, value, font=None, alignment=None, border=None):
     ws[cell] = value
@@ -44,15 +41,11 @@ def set_cell(ws, cell, value, font=None, alignment=None, border=None):
     if border:
         ws[cell].border = border
 
-# @app.route('/')
-
 @app_job_work.route('/upload_job_work')
 def upload_job_work():
     return render_template('upload_job_work.html') # HTML template for file upload
 
-# def upload_file():
-#     return render_template('upload.html')  # HTML template for file upload
-
+    
 @app_job_work.route('/process', methods=['POST'])
 def process_file():
         # Check if an input file was uploaded
@@ -654,7 +647,7 @@ def process_file():
         met_wt_gms = float(met_wt_gms_list[i]) if met_wt_gms_list[i] else 0
         value_usd = float(value_usd_list[i]) if value_usd_list[i] else 0
         rate = float(rate_per_grams_list[i]) if rate_per_grams_list[i] else 0
-        
+
     
     # Write data to the worksheet
         ws.cell(row=data_start_row + i, column=1, value=rm).alignment = LEFT_ALIGN
@@ -714,6 +707,8 @@ def process_file():
     ws.cell(row=headers_row_for_present_ppl, column=4, value="Inv Pure Wt")
     ws.cell(row=headers_row_for_present_ppl, column=4).font = Font(bold=True)
 
+     # Get the input value for Challan No.
+    challan_no_value = request.form.get('challan_no', '')
     
     required_columns_for_reco = ['Inv Rate','Inv Pure Wt','Inv Rm Wt','Inv Value']
     # Check for missing columns and add them with default value of 0
@@ -745,46 +740,25 @@ def process_file():
         filtered_df = df[df['Inv Rate'].isin(rate_list)]
 
         # Check the filtered DataFrame
-        print("Filtered DataFrame:")
-        print(filtered_df)
+        # print("Filtered DataFrame:")
+        # print(filtered_df)
 
-        # If there are matching rows, perform groupby
-        if not filtered_df.empty:
-            group_for_reconciliation = (
-                filtered_df.groupby(["Inv Rate"], dropna=False)
-                .agg({
-                    "Inv Rm Wt": "sum",
-                    "Inv Pure Wt": "sum",
-                    "Inv Value": "sum"
-                })
-                .reset_index()
-            )
-
-            # Round the grouped values
-            group_for_reconciliation[["Inv Rate", "Inv Rm Wt", "Inv Pure Wt", "Inv Value"]] = (
-                group_for_reconciliation[["Inv Rate", "Inv Rm Wt", "Inv Pure Wt", "Inv Value"]].round(3)
-            )
-
-     # Reorder Grouped DataFrame based on the input rate_per_grams_list
-    ordered_rates = [round(float(rate), 3) for rate in rate_per_grams_list if rate]  # Ensure rates are rounded
-    group_for_reconciliation = group_for_reconciliation.set_index("Inv Rate")  # Set "Inv Rate" as the index
-    group_for_reconciliation = group_for_reconciliation.loc[ordered_rates].reset_index()  # Reorder by ordered_rates and reset index
-
-    # Write data rows
-    for i, rm_for_present_ppl in enumerate(rm_list_for_present_ppl):
-        ws.cell(row=data_start_row_for_present_ppl + i, column=1, value=rm_for_present_ppl).alignment = LEFT_ALIGN
-        ws.cell(row=data_start_row_for_present_ppl + i, column=2, value=group_for_reconciliation.loc[i, "Inv Rm Wt"]).alignment = LEFT_ALIGN
-        ws.cell(row=data_start_row_for_present_ppl + i, column=3, value=group_for_reconciliation.loc[i, "Inv Value"]).alignment = LEFT_ALIGN
-        ws.cell(row=data_start_row_for_present_ppl + i, column=4, value=group_for_reconciliation.loc[i, "Inv Pure Wt"]).alignment = LEFT_ALIGN
-
-    # Add "Total" row
-    total_row_index = len(rm_list_for_present_ppl)  # Position for "Total" row
-    ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=1, value="Total").alignment = LEFT_ALIGN
-    ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=2, value=group_for_reconciliation["Inv Rm Wt"].sum()).alignment = LEFT_ALIGN
-    ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=3, value=group_for_reconciliation["Inv Value"].sum()).alignment = LEFT_ALIGN
-    ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=4, value=group_for_reconciliation["Inv Pure Wt"].sum()).alignment = LEFT_ALIGN
-            
         
+    # # Write data rows
+    # for i, rm_for_present_ppl in enumerate(rm_list_for_present_ppl):
+    #     ws.cell(row=data_start_row_for_present_ppl + i, column=1, value=rm_for_present_ppl).alignment = LEFT_ALIGN
+    #     ws.cell(row=data_start_row_for_present_ppl + i, column=2, value=group_for_reconciliation.loc[i, "Inv Rm Wt"]).alignment = LEFT_ALIGN
+    #     ws.cell(row=data_start_row_for_present_ppl + i, column=3, value=group_for_reconciliation.loc[i, "Inv Value"]).alignment = LEFT_ALIGN
+    #     ws.cell(row=data_start_row_for_present_ppl + i, column=4, value=group_for_reconciliation.loc[i, "Inv Pure Wt"]).alignment = LEFT_ALIGN
+
+    # # Add "Total" row
+    total_row_index = len(rm_list_for_present_ppl)  # Position for "Total" row
+    # ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=1, value="Total").alignment = LEFT_ALIGN
+    # ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=2, value=group_for_reconciliation["Inv Rm Wt"].sum()).alignment = LEFT_ALIGN
+    # ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=3, value=group_for_reconciliation["Inv Value"].sum()).alignment = LEFT_ALIGN
+    # ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=4, value=group_for_reconciliation["Inv Pure Wt"].sum()).alignment = LEFT_ALIGN   
+
+            
     # Get the input without forcing it into a string
     banker_detail_value = request.form.get('Banker_details', '')
 
@@ -803,8 +777,7 @@ def process_file():
     ws['E27'].alignment = Alignment(horizontal='left', vertical='top', wrap_text=False)
     
     
-    # Get the input value for Challan No.
-    challan_no_value = request.form.get('challan_no', '')
+   
 
     # Add "Challan No." header at row 29, column E
     ws['E29'] = "Challan No."
@@ -829,8 +802,8 @@ def process_file():
 
 
     # Calculate where to print the exchange rate
-    last_data_row_of_present_ppl = data_start_row_for_present_ppl + total_row_index + 3
-    table = last_data_row_of_present_ppl + 10
+    last_data_row_of_present_ppl = data_start_row_for_present_ppl + total_row_index + 5
+    table = last_data_row_of_present_ppl + 40
     exchange_rate_row_number = table + 17 # Add a 5-line gap (3 for data, 2 for space)
 
     diamond_stone_table = df.loc[df['Ctg'].isin(['C','D'])].groupby(["Ctg"], dropna=False).agg({
@@ -1042,16 +1015,195 @@ def process_file():
    
     ws.cell(row=line_8, column=1, value="goods described and that all particulars are true and correct.")
     ws.cell(row=line_8, column=1).font = Font(bold=True)  # Make the text bold
+# If there are matching rows, perform groupby
+    if not filtered_df.empty:
+        group_for_reconciliation = (
+            filtered_df.groupby(["Inv Rate"], dropna=False)
+            .agg({
+                "Inv Rm Wt": "sum",
+                "Inv Pure Wt": "sum",
+                "Inv Value": "sum"
+            })
+            .reset_index()
+        )
+
+        # Round the grouped values
+        group_for_reconciliation[["Inv Rate", "Inv Rm Wt", "Inv Pure Wt", "Inv Value"]] = (
+            group_for_reconciliation[["Inv Rate", "Inv Rm Wt", "Inv Pure Wt", "Inv Value"]].round(3)
+        )
+
+    # Reorder Grouped DataFrame based on the input rate_per_grams_list
+    ordered_rates = [round(float(rate), 3) for rate in rate_per_grams_list if rate]  # Ensure rates are rounded
+    group_for_reconciliation = group_for_reconciliation.set_index("Inv Rate")  # Set "Inv Rate" as the index
+    group_for_reconciliation = group_for_reconciliation.loc[ordered_rates].reset_index()  # Reorder by ordered_rates and reset index
+
+    try:
+        # Step 1: Get Challan No and RM list
+        challan_no_value = request.form.get('challan_no', '').strip()
+        if not challan_no_value:
+            return jsonify({'error': 'Challan number is required'})
+
+        rm_list_for_present_ppl = request.form.getlist('rm[]')  # Ensure this is a list of strings
+        if not rm_list_for_present_ppl:
+            return jsonify({'error': 'RM list is required'})
+
+        
+        
+        if len(rm_list_for_present_ppl) != len(group_for_reconciliation):
+            return jsonify({'error': 'RM list length does not match reconciliation data rows'})
+
+        cur = mysql.connection.cursor()
+
+        # Step 2: Check if challan already exists
+        select_challan_query = "SELECT challan_id FROM challan WHERE challan_no = %s"
+        cur.execute(select_challan_query, (challan_no_value,))
+        challan = cur.fetchone()
+
+        if not challan:
+            # Insert new challan_no if it doesn't exist
+            insert_challan_query = "INSERT INTO challan (challan_no) VALUES (%s)"
+            cur.execute(insert_challan_query, (challan_no_value,))
+            mysql.connection.commit()
+            challan_id = cur.lastrowid
+        else:
+            challan_id = challan[0]
+
+        # Step 3: Create a new batch for the challan
+        insert_batch_query = "INSERT INTO batch (challan_id) VALUES (%s)"
+        cur.execute(insert_batch_query, (challan_id,))
+        mysql.connection.commit()
+        batch_id = cur.lastrowid
+
+        # Step 4: Insert new data for this batch
+        generated_table = group_for_reconciliation.to_dict(orient='records')
+        data_to_insert = [
+            (
+                challan_id,
+                batch_id,
+                rm_list_for_present_ppl[i],
+                row["Inv Rm Wt"],
+                row["Inv Value"],
+                row["Inv Pure Wt"]
+            )
+            for i, row in enumerate(generated_table)
+        ]
+
+        insert_reconciliation_query = """
+            INSERT INTO reconciliation (challan_id, batch_id, rm, met_wt_gms, value_usd, inv_pure_wt)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        cur.executemany(insert_reconciliation_query, data_to_insert)
+        mysql.connection.commit()
+
+        # Fetch all batches and data for this challan
+        fetch_batches_query = """
+            SELECT batch_id, DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') AS batch_time
+            FROM batch WHERE challan_id = %s
+            ORDER BY created_at ASC
+        """
+        cur.execute(fetch_batches_query, (challan_id,))
+        batches = cur.fetchall()
+
+        current_row = last_data_row_of_present_ppl + 5
+        headers = ["RM", "Met Wt Gms", "Value USD", "Inv Pure Wt"]
+
+        for batch in batches:
+            batch_id, batch_time = batch
+
+            # Fetch data for the current batch
+            fetch_records_query = """
+                SELECT rm, met_wt_gms, value_usd, inv_pure_wt
+                FROM reconciliation WHERE batch_id = %s
+            """
+            cur.execute(fetch_records_query, (batch_id,))
+            rows = cur.fetchall()
+
+            # Reset totals for the current batch
+            total_met_wt_gms = 0
+            total_value_usd = 0
+
+            # Write batch title
+            ws.cell(row=current_row, column=1, value=f"Challan No: {challan_no_value} - Batch: {batch_time}")
+            ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=4)
+            current_row += 1
+
+            # Write headers
+            for col_num, header in enumerate(headers, 1):
+                ws.cell(row=current_row, column=col_num, value=header)
+            current_row += 1
+
+            # Write data rows and calculate totals
+            for row in rows:
+                for col_num, cell_value in enumerate(row, 1):
+                    ws.cell(row=current_row, column=col_num, value=cell_value)
+                    if col_num == 2:  # Met Wt Gms
+                        total_met_wt_gms += float(cell_value)
+                    elif col_num == 3:  # Value USD
+                        total_value_usd += float(cell_value)
+                current_row += 1
+
+            # Add "Total" row
+            ws.cell(row=current_row, column=1, value="Total")
+            ws.cell(row=current_row, column=2, value=total_met_wt_gms)
+            ws.cell(row=current_row, column=3, value=total_value_usd)
+            current_row += 2  # Add spacing
+
+        # Add Calculated Table After All Batches
+        ws.cell(row=current_row, column=1, value="Calculated Differences")
+        ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=4)
+        current_row += 1
+
+        # Write headers for the calculated table
+        calc_headers = ["RM", "Met Wt Gms", "Value USD"]
+        for col_num, header in enumerate(calc_headers, 1):
+            ws.cell(row=current_row, column=col_num, value=header)
+        current_row += 1
+
+        # Write calculated rows
+        for i, rm in enumerate(rm_list_for_present_ppl):
+            met_wt_gms = float(met_wt_gms_list[i]) if met_wt_gms_list[i] else 0
+            value_usd = float(value_usd_list[i]) if value_usd_list[i] else 0
+
+            diff_met_wt_gms = total_met_wt_gms - met_wt_gms
+            diff_value_usd = total_value_usd - value_usd
+
+            ws.cell(row=current_row, column=1, value=rm)
+            ws.cell(row=current_row, column=2, value=diff_met_wt_gms)
+            ws.cell(row=current_row, column=3, value=diff_value_usd)
+            current_row += 1
+
+        cur.close()
+
+        # Save the Excel file
+        output_file = os.path.join(OUTPUT_DIR, "Formatted_Invoice.xlsx")
+        wb.save(output_file)
+
+        # Send the file for download
+        return send_file(output_file, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name="Formatted_Invoice.xlsx")
+
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+
+
+
+
 
     
-       
-    # Save the file
-    output_file = os.path.join(OUTPUT_DIR, "Formatted_Invoice.xlsx")
-    wb.save(output_file)
+# def test_connection():
+#     try:
+#         # Attempt to connect and run a simple query
+#         cur = mysql.connection.cursor()
+#         cur.execute("SELECT 1")  
+#         result = cur.fetchone()
+#         cur.close()
+#         return jsonify({'success': True, 'message': 'Database connection successful', 'result': result})
+#     except Exception as e:
+#         return jsonify({'success': False, 'error': str(e)})
+ 
+   
 
-    # Send the file for download
-    return send_file(output_file, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name="Formatted_Invoice.xlsx")
-
+            
 def get_metal_mapping(output_header, row, ctg, metal_kt):
     return_dict = {}
     common_column = "Inv Rm Wt"
@@ -1101,8 +1253,7 @@ def map_headers_to_data(headers, data):
 
 
 if __name__ == '__main__':
-    app_job_work.run(debug=True)
-
+    app_job_work.run(debug=True) 
 
 
 
