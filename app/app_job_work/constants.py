@@ -21,6 +21,7 @@ STATEMENT_DICT = {
     "24KT": "24KT",
     "NTL": "Comb. with Nithanol",
     "STL": "Comb. with Steel",
+    "CER": "Comb. with Ceramic",
 }
 
 DESIGN_CATEGORY = {
@@ -28,6 +29,9 @@ DESIGN_CATEGORY = {
     "BNG": "Bangle",
     "NCK": "Necklace",
     "ERG": "Earring",
-    "PND": "Pendant"
+    "PND": "Pendant",
+    "BRC": "Bracelet",
+    "BCT": "Bracelet",
+    "CT" : "Component",
 }
 
