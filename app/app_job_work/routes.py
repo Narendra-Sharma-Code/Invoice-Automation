@@ -641,50 +641,102 @@ def process_file():
     total_met_wt_gms = 0  # Initialize sum for Met. Wt.Gms
     total_value_usd = 0  # Initialize sum for Value US$
 
-    for i in range(len(rm_list)):
-        rm = rm_list[i]
-        qty_pcs = float(qty_pcs_list[i]) if qty_pcs_list[i] else 0  # Get QTY PCS value or default to 0
-        met_wt_gms = float(met_wt_gms_list[i]) if met_wt_gms_list[i] else 0
-        value_usd = float(value_usd_list[i]) if value_usd_list[i] else 0
-        rate = float(rate_per_grams_list[i]) if rate_per_grams_list[i] else 0
+    # for i in range(len(rm_list)):
+    #     rm = rm_list[i]
+    #     qty_pcs = float(qty_pcs_list[i]) if qty_pcs_list[i] else 0  # Get QTY PCS value or default to 0
+    #     met_wt_gms = float(met_wt_gms_list[i]) if met_wt_gms_list[i] else 0
+    #     value_usd = float(value_usd_list[i]) if value_usd_list[i] else 0
+    #     rate = float(rate_per_grams_list[i]) if rate_per_grams_list[i] else 0
 
     
-    # Write data to the worksheet
-        ws.cell(row=data_start_row + i, column=1, value=rm).alignment = LEFT_ALIGN
+    # # Write data to the worksheet
+    #     ws.cell(row=data_start_row + i, column=1, value=rm).alignment = LEFT_ALIGN
     
-        if qty_pcs_exists:  # Print QTY PCS only if at least one value exists
-            ws.cell(row=data_start_row + i, column=2, value=qty_pcs).alignment = LEFT_ALIGN
+    #     if qty_pcs_exists:  # Print QTY PCS only if at least one value exists
+    #         ws.cell(row=data_start_row + i, column=2, value=qty_pcs).alignment = LEFT_ALIGN
     
-    # Write Met. Wt.Gms and Value US$
-        ws.cell(row=data_start_row + i, column=met_wt_gms_col, value=met_wt_gms).alignment = LEFT_ALIGN
-        ws.cell(row=data_start_row + i, column=value_usd_col, value=value_usd).alignment = LEFT_ALIGN
-        ws.cell(row=data_start_row + i, column=rate_per_grams_col, value=rate).alignment = LEFT_ALIGN
+    # # Write Met. Wt.Gms and Value US$
+    #     ws.cell(row=data_start_row + i, column=met_wt_gms_col, value=met_wt_gms).alignment = LEFT_ALIGN
+    #     ws.cell(row=data_start_row + i, column=value_usd_col, value=value_usd).alignment = LEFT_ALIGN
+    #     ws.cell(row=data_start_row + i, column=rate_per_grams_col, value=rate).alignment = LEFT_ALIGN
 
-    # Add to the totals
-        total_qty_pcs += qty_pcs
-        total_met_wt_gms += met_wt_gms
-        total_value_usd += value_usd
+    # # Add to the totals
+    #     total_qty_pcs += qty_pcs
+    #     total_met_wt_gms += met_wt_gms
+    #     total_value_usd += value_usd
 
     # Step 4: Add Totals in the Last Row of Data
     last_data_row = data_start_row + len(rm_list)  # Get the last row of the data
 
-    # Insert total labels and values
-    ws.cell(row=last_data_row + 1, column=1, value="Total").alignment = LEFT_ALIGN
-    ws.cell(row=last_data_row + 1, column=1).font = Font(bold=True) # Make the text bold
+    # # Insert total labels and values
+    # ws.cell(row=last_data_row + 1, column=1, value="Total").alignment = LEFT_ALIGN
+    # ws.cell(row=last_data_row + 1, column=1).font = Font(bold=True) # Make the text bold
 
-    if qty_pcs_exists:  # Print QTY PCS total only if QTY PCS exists
-        ws.cell(row=last_data_row + 1, column=2, value=total_qty_pcs).alignment = LEFT_ALIGN
-        ws.cell(row=last_data_row + 1, column=2).font = Font(bold=True)
+    # if qty_pcs_exists:  # Print QTY PCS total only if QTY PCS exists
+    #     ws.cell(row=last_data_row + 1, column=2, value=total_qty_pcs).alignment = LEFT_ALIGN
+    #     ws.cell(row=last_data_row + 1, column=2).font = Font(bold=True)
 
-    # Write Met. Wt.Gms and Value US$ totals
-    ws.cell(row=last_data_row + 1, column=met_wt_gms_col, value=total_met_wt_gms).alignment = LEFT_ALIGN
-    ws.cell(row=last_data_row + 1, column=met_wt_gms_col).font = Font(bold=True)
+    # # Write Met. Wt.Gms and Value US$ totals
+    # ws.cell(row=last_data_row + 1, column=met_wt_gms_col, value=total_met_wt_gms).alignment = LEFT_ALIGN
+    # ws.cell(row=last_data_row + 1, column=met_wt_gms_col).font = Font(bold=True)
 
-    # Write the Value US$ total
-    cell = ws.cell(row=last_data_row + 1, column=value_usd_col, value=total_value_usd)
-    cell.alignment = LEFT_ALIGN  # Set left alignment
-    cell.font = Font(bold=True)  # Set bold font
+    # # Write the Value US$ total
+    # cell = ws.cell(row=last_data_row + 1, column=value_usd_col, value=total_value_usd)
+    # cell.alignment = LEFT_ALIGN  # Set left alignment
+    # cell.font = Font(bold=True)  # Set bold font
+    
+    
+    # Get the input value for Challan No.
+    challan_no_value = request.form.get('challan_no', '')
+    
+    # Convert the generated table data into a JSON-compatible format
+    generated_table_data = []
+    for i in range(len(rm_list)):
+        table_row = {
+            "rm": rm_list[i],
+            "qty_pcs": float(qty_pcs_list[i]) if qty_pcs_list[i] else None,
+            "met_wt_gms": float(met_wt_gms_list[i]) if met_wt_gms_list[i] else None,
+            "value_usd": float(value_usd_list[i]) if value_usd_list[i] else None,
+            "rate_per_grams": float(rate_per_grams_list[i]) if rate_per_grams_list[i] else None,
+        }
+        generated_table_data.append(table_row)
+
+    # Convert table data to JSON
+    table_data_json = json.dumps(generated_table_data)
+
+    # Store the table data in the `generated_tables` table
+    cur = mysql.connection.cursor()
+    insert_generated_table_query = """
+        INSERT INTO generated_tables (challan_no, data)
+        VALUES (%s, %s)
+        ON DUPLICATE KEY UPDATE data = VALUES(data)
+    """
+    cur.execute(insert_generated_table_query, (challan_no_value, table_data_json))
+    mysql.connection.commit()
    
+   # Fetch existing table data for the given challan number
+    cur = mysql.connection.cursor()
+    select_generated_table_query = "SELECT data FROM generated_tables WHERE challan_no = %s"
+    cur.execute(select_generated_table_query, (challan_no_value,))
+    result = cur.fetchone()
+
+
+    if result:
+        # If data exists, load it and generate the table
+        stored_table_data = json.loads(result[0])
+        # Use the stored data to generate the table in Excel
+        for i, row in enumerate(stored_table_data):
+            ws.cell(row=data_start_row + i, column=1, value=row['rm']).alignment = LEFT_ALIGN
+            if qty_pcs_exists:
+                ws.cell(row=data_start_row + i, column=2, value=row['qty_pcs']).alignment = LEFT_ALIGN
+            ws.cell(row=data_start_row + i, column=met_wt_gms_col, value=row['met_wt_gms']).alignment = LEFT_ALIGN
+            ws.cell(row=data_start_row + i, column=value_usd_col, value=row['value_usd']).alignment = LEFT_ALIGN
+            ws.cell(row=data_start_row + i, column=rate_per_grams_col, value=row['rate_per_grams']).alignment = LEFT_ALIGN
+    else:
+        # Proceed to generate the table and store it in the database as shown above
+        pass
+    
+    
    # Form input
     rm_list_for_present_ppl = request.form.getlist('rm[]')  # Ensure it's a list
     rm_list_for_present_ppl = [rm.strip() for rm in rm_list_for_present_ppl]  # Strip any whitespace
@@ -742,22 +794,48 @@ def process_file():
         # Check the filtered DataFrame
         # print("Filtered DataFrame:")
         # print(filtered_df)
+        # If there are matching rows, perform groupby
+        if not filtered_df.empty:
+            group_for_reconciliation = (
+                filtered_df.groupby(["Inv Rate"], dropna=False)
+                .agg({
+                    "Inv Rm Wt": "sum",
+                    "Inv Pure Wt": "sum",
+                    "Inv Value": "sum"
+                })
+                .reset_index()
+            )
 
-        
-    # # Write data rows
-    # for i, rm_for_present_ppl in enumerate(rm_list_for_present_ppl):
-    #     ws.cell(row=data_start_row_for_present_ppl + i, column=1, value=rm_for_present_ppl).alignment = LEFT_ALIGN
-    #     ws.cell(row=data_start_row_for_present_ppl + i, column=2, value=group_for_reconciliation.loc[i, "Inv Rm Wt"]).alignment = LEFT_ALIGN
-    #     ws.cell(row=data_start_row_for_present_ppl + i, column=3, value=group_for_reconciliation.loc[i, "Inv Value"]).alignment = LEFT_ALIGN
-    #     ws.cell(row=data_start_row_for_present_ppl + i, column=4, value=group_for_reconciliation.loc[i, "Inv Pure Wt"]).alignment = LEFT_ALIGN
+            group_for_reconciliation[["Inv Rate", "Inv Rm Wt", "Inv Pure Wt", "Inv Value"]] = (
+                group_for_reconciliation[["Inv Rate", "Inv Rm Wt", "Inv Pure Wt", "Inv Value"]].round(3)
+            )
+        else:
+            # Create an empty DataFrame with the necessary columns
+            group_for_reconciliation = pd.DataFrame(columns=["Inv Rate", "Inv Rm Wt", "Inv Pure Wt", "Inv Value"])
+    
+     # Reorder Grouped DataFrame based on the input rate_per_grams_list
+    ordered_rates = [round(float(rate), 3) for rate in rate_per_grams_list if rate]  # Ensure rates are rounded
+    group_for_reconciliation = group_for_reconciliation.set_index("Inv Rate")  # Set "Inv Rate" as the index
+    group_for_reconciliation = group_for_reconciliation.loc[ordered_rates].reset_index()  # Reorder by ordered_rates and reset index
+
+
+    # if not group_for_reconciliation.empty:
+    #     for i, rm_for_present_ppl in enumerate(rm_list_for_present_ppl):
+    #         ws.cell(row=data_start_row_for_present_ppl + i, column=1, value=rm_for_present_ppl).alignment = LEFT_ALIGN
+    #         ws.cell(row=data_start_row_for_present_ppl + i, column=2, value=group_for_reconciliation.loc[i, "Inv Rm Wt"]).alignment = LEFT_ALIGN
+    #         ws.cell(row=data_start_row_for_present_ppl + i, column=3, value=group_for_reconciliation.loc[i, "Inv Value"]).alignment = LEFT_ALIGN
+    #         ws.cell(row=data_start_row_for_present_ppl + i, column=4, value=group_for_reconciliation.loc[i, "Inv Pure Wt"]).alignment = LEFT_ALIGN
+    #     else:
+    #         print("No data available for reconciliation.")
 
     # # Add "Total" row
     total_row_index = len(rm_list_for_present_ppl)  # Position for "Total" row
     # ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=1, value="Total").alignment = LEFT_ALIGN
     # ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=2, value=group_for_reconciliation["Inv Rm Wt"].sum()).alignment = LEFT_ALIGN
     # ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=3, value=group_for_reconciliation["Inv Value"].sum()).alignment = LEFT_ALIGN
-    # ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=4, value=group_for_reconciliation["Inv Pure Wt"].sum()).alignment = LEFT_ALIGN   
-
+    # ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=4, value=group_for_reconciliation["Inv Pure Wt"].sum()).alignment = LEFT_ALIGN
+    
+    
             
     # Get the input without forcing it into a string
     banker_detail_value = request.form.get('Banker_details', '')
@@ -1015,30 +1093,9 @@ def process_file():
    
     ws.cell(row=line_8, column=1, value="goods described and that all particulars are true and correct.")
     ws.cell(row=line_8, column=1).font = Font(bold=True)  # Make the text bold
-# If there are matching rows, perform groupby
-    if not filtered_df.empty:
-        group_for_reconciliation = (
-            filtered_df.groupby(["Inv Rate"], dropna=False)
-            .agg({
-                "Inv Rm Wt": "sum",
-                "Inv Pure Wt": "sum",
-                "Inv Value": "sum"
-            })
-            .reset_index()
-        )
-
-        # Round the grouped values
-        group_for_reconciliation[["Inv Rate", "Inv Rm Wt", "Inv Pure Wt", "Inv Value"]] = (
-            group_for_reconciliation[["Inv Rate", "Inv Rm Wt", "Inv Pure Wt", "Inv Value"]].round(3)
-        )
-
-    # Reorder Grouped DataFrame based on the input rate_per_grams_list
-    ordered_rates = [round(float(rate), 3) for rate in rate_per_grams_list if rate]  # Ensure rates are rounded
-    group_for_reconciliation = group_for_reconciliation.set_index("Inv Rate")  # Set "Inv Rate" as the index
-    group_for_reconciliation = group_for_reconciliation.loc[ordered_rates].reset_index()  # Reorder by ordered_rates and reset index
 
     try:
-        # Step 1: Get Challan No and RM list
+        # Step 1: Get Challan No, RM list, and Invoice No Date
         challan_no_value = request.form.get('challan_no', '').strip()
         if not challan_no_value:
             return jsonify({'error': 'Challan number is required'})
@@ -1047,12 +1104,15 @@ def process_file():
         if not rm_list_for_present_ppl:
             return jsonify({'error': 'RM list is required'})
 
-        
-        
+        invoice_no_date = request.form.get('invoice_no_date', '').strip()
+        if not invoice_no_date:
+            return jsonify({'error': 'Invoice number date is required'})
+
         if len(rm_list_for_present_ppl) != len(group_for_reconciliation):
             return jsonify({'error': 'RM list length does not match reconciliation data rows'})
 
         cur = mysql.connection.cursor()
+
 
         # Step 2: Check if challan already exists
         select_challan_query = "SELECT challan_id FROM challan WHERE challan_no = %s"
@@ -1060,19 +1120,21 @@ def process_file():
         challan = cur.fetchone()
 
         if not challan:
-            # Insert new challan_no if it doesn't exist
-            insert_challan_query = "INSERT INTO challan (challan_no) VALUES (%s)"
-            cur.execute(insert_challan_query, (challan_no_value,))
+            # Insert new challan_no and invoice_no_date if it doesn't exist
+            insert_challan_query = "INSERT INTO challan (challan_no, invoice_no_date) VALUES (%s, %s)"
+            cur.execute(insert_challan_query, (challan_no_value, invoice_no_date))
             mysql.connection.commit()
             challan_id = cur.lastrowid
         else:
             challan_id = challan[0]
 
+
         # Step 3: Create a new batch for the challan
-        insert_batch_query = "INSERT INTO batch (challan_id) VALUES (%s)"
-        cur.execute(insert_batch_query, (challan_id,))
+        insert_batch_query = "INSERT INTO batch (challan_id, invoice_no_date) VALUES (%s, %s)"
+        cur.execute(insert_batch_query, (challan_id, invoice_no_date))
         mysql.connection.commit()
         batch_id = cur.lastrowid
+
 
         # Step 4: Insert new data for this batch
         generated_table = group_for_reconciliation.to_dict(orient='records')
@@ -1095,9 +1157,9 @@ def process_file():
         cur.executemany(insert_reconciliation_query, data_to_insert)
         mysql.connection.commit()
 
-        # Fetch all batches and data for this challan
+           # Fetch all batches and data for this challan
         fetch_batches_query = """
-            SELECT batch_id, DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') AS batch_time
+            SELECT batch_id, DATE_FORMAT(created_at, '%%Y-%%m-%%d %%H:%%i:%%s') AS batch_time, invoice_no_date
             FROM batch WHERE challan_id = %s
             ORDER BY created_at ASC
         """
@@ -1108,7 +1170,7 @@ def process_file():
         headers = ["RM", "Met Wt Gms", "Value USD", "Inv Pure Wt"]
 
         for batch in batches:
-            batch_id, batch_time = batch
+            batch_id, batch_time, invoice_no_date = batch
 
             # Fetch data for the current batch
             fetch_records_query = """
@@ -1123,9 +1185,10 @@ def process_file():
             total_value_usd = 0
 
             # Write batch title
-            ws.cell(row=current_row, column=1, value=f"Challan No: {challan_no_value} - Batch: {batch_time}")
+            ws.cell(row=current_row, column=1, value=f"Less: Metal Used In Packing List {invoice_no_date}")
             ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=4)
             current_row += 1
+
 
             # Write headers
             for col_num, header in enumerate(headers, 1):
@@ -1149,7 +1212,7 @@ def process_file():
             current_row += 2  # Add spacing
 
         # Add Calculated Table After All Batches
-        ws.cell(row=current_row, column=1, value="Calculated Differences")
+        ws.cell(row=current_row, column=1, value="Balance Loose Metal")
         ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=4)
         current_row += 1
 
@@ -1164,8 +1227,9 @@ def process_file():
             met_wt_gms = float(met_wt_gms_list[i]) if met_wt_gms_list[i] else 0
             value_usd = float(value_usd_list[i]) if value_usd_list[i] else 0
 
-            diff_met_wt_gms = total_met_wt_gms - met_wt_gms
-            diff_value_usd = total_value_usd - value_usd
+            # Calculate absolute differences
+            diff_met_wt_gms = abs(total_met_wt_gms - met_wt_gms)
+            diff_value_usd = abs(total_value_usd - value_usd)
 
             ws.cell(row=current_row, column=1, value=rm)
             ws.cell(row=current_row, column=2, value=diff_met_wt_gms)
