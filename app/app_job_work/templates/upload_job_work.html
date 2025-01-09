@@ -275,10 +275,10 @@
         addRowButton.addEventListener('click', () => {
             const row = document.createElement('tr');
             row.innerHTML = `
-        <td><input type="text" name="rm[]" placeholder="Enter RM" required></td>
+        <td><input type="text" name="rm[]" placeholder="Enter RM" ></td>
         <td><input type="number" name="qty_pcs[]" placeholder="Enter QTY PCS" step="any"></td> <!-- Allows any decimal value -->
-        <td><input type="number" step="any" name="met_wt_gms[]" placeholder="Enter Met. Wt.Gms" required></td> <!-- Allows any decimal value -->
-        <td><input type="number" step="any" name="value_usd[]" placeholder="Enter Value US$" required></td> <!-- Allows any decimal value -->
+        <td><input type="number" step="any" name="met_wt_gms[]" placeholder="Enter Met. Wt.Gms" ></td> <!-- Allows any decimal value -->
+        <td><input type="number" step="any" name="value_usd[]" placeholder="Enter Value US$" ></td> <!-- Allows any decimal value -->
         <td><input type="number" step="any" name="rate[]" placeholder="Rate per Grams" required></td> <!-- Allows any decimal value -->
         <td><button type="button" class="delete-row-btn">Delete</button></td>
     `;
