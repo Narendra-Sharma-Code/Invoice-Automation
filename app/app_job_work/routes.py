@@ -12,7 +12,7 @@ from app.extensions import mysql  # Import mysql from extensions
 import json
 
 # app_job_work = Flask(__name__)
-app_job_work = Blueprint('app_job_work', __name__, template_folder='templates')
+app_job_work = Blueprint('app_job_work', __name__, template_folder='templates',static_folder='app/static')
     
 # Ensure the output directory exists
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__),"outputs")
@@ -631,75 +631,54 @@ def process_file():
 
     ws.cell(row=headers_row_number, column=value_usd_col, value="Value US$")
     ws.cell(row=headers_row_number, column=value_usd_col).font = Font(bold=True)  # Make the text bold
+    
    
-    ws.cell(row=headers_row_number, column=rate_per_grams_col, value="Rate per Grams")
-    ws.cell(row=headers_row_number, column=rate_per_grams_col).font = Font(bold=True)  # Make the text bold
-    
-    # Step 3: Insert RM, QTY PCS, Met. Wt.Gms, and Value US$ Data Below the Headers
-    data_start_row = headers_row_number + 1  # Row immediately after the headers
-    total_qty_pcs = 0  # Initialize total for QTY PCS
-    total_met_wt_gms = 0  # Initialize sum for Met. Wt.Gms
-    total_value_usd = 0  # Initialize sum for Value US$
-
-    # for i in range(len(rm_list)):
-    #     rm = rm_list[i]
-    #     qty_pcs = float(qty_pcs_list[i]) if qty_pcs_list[i] else 0  # Get QTY PCS value or default to 0
-    #     met_wt_gms = float(met_wt_gms_list[i]) if met_wt_gms_list[i] else 0
-    #     value_usd = float(value_usd_list[i]) if value_usd_list[i] else 0
-    #     rate = float(rate_per_grams_list[i]) if rate_per_grams_list[i] else 0
-
-    
-    # # Write data to the worksheet
-    #     ws.cell(row=data_start_row + i, column=1, value=rm).alignment = LEFT_ALIGN
-    
-    #     if qty_pcs_exists:  # Print QTY PCS only if at least one value exists
-    #         ws.cell(row=data_start_row + i, column=2, value=qty_pcs).alignment = LEFT_ALIGN
-    
-    # # Write Met. Wt.Gms and Value US$
-    #     ws.cell(row=data_start_row + i, column=met_wt_gms_col, value=met_wt_gms).alignment = LEFT_ALIGN
-    #     ws.cell(row=data_start_row + i, column=value_usd_col, value=value_usd).alignment = LEFT_ALIGN
-    #     ws.cell(row=data_start_row + i, column=rate_per_grams_col, value=rate).alignment = LEFT_ALIGN
-
-    # # Add to the totals
-    #     total_qty_pcs += qty_pcs
-    #     total_met_wt_gms += met_wt_gms
-    #     total_value_usd += value_usd
-
     # Step 4: Add Totals in the Last Row of Data
+    data_start_row = headers_row_number + 1  # Row immediately after the headers
     last_data_row = data_start_row + len(rm_list)  # Get the last row of the data
 
-    # # Insert total labels and values
-    # ws.cell(row=last_data_row + 1, column=1, value="Total").alignment = LEFT_ALIGN
-    # ws.cell(row=last_data_row + 1, column=1).font = Font(bold=True) # Make the text bold
-
-    # if qty_pcs_exists:  # Print QTY PCS total only if QTY PCS exists
-    #     ws.cell(row=last_data_row + 1, column=2, value=total_qty_pcs).alignment = LEFT_ALIGN
-    #     ws.cell(row=last_data_row + 1, column=2).font = Font(bold=True)
-
-    # # Write Met. Wt.Gms and Value US$ totals
-    # ws.cell(row=last_data_row + 1, column=met_wt_gms_col, value=total_met_wt_gms).alignment = LEFT_ALIGN
-    # ws.cell(row=last_data_row + 1, column=met_wt_gms_col).font = Font(bold=True)
-
-    # # Write the Value US$ total
-    # cell = ws.cell(row=last_data_row + 1, column=value_usd_col, value=total_value_usd)
-    # cell.alignment = LEFT_ALIGN  # Set left alignment
-    # cell.font = Font(bold=True)  # Set bold font
-    
     
     # Get the input value for Challan No.
     challan_no_value = request.form.get('challan_no', '')
-    
-    # Convert the generated table data into a JSON-compatible format
     generated_table_data = []
+    total_qty_pcs = 0
+    total_met_wt_gms = 0
+    total_value_usd = 0
+
+    # Convert the generated table data into a JSON-compatible format
     for i in range(len(rm_list)):
+        qty_pcs = float(qty_pcs_list[i]) if qty_pcs_list[i] else 0
+        met_wt_gms = float(met_wt_gms_list[i]) if met_wt_gms_list[i] else 0
+        value_usd = float(value_usd_list[i]) if value_usd_list[i] else 0
+        rate_per_grams = float(rate_per_grams_list[i]) if rate_per_grams_list[i] else 0
+
+        # Add the data row to the generated table
         table_row = {
             "rm": rm_list[i],
-            "qty_pcs": float(qty_pcs_list[i]) if qty_pcs_list[i] else None,
-            "met_wt_gms": float(met_wt_gms_list[i]) if met_wt_gms_list[i] else None,
-            "value_usd": float(value_usd_list[i]) if value_usd_list[i] else None,
-            "rate_per_grams": float(rate_per_grams_list[i]) if rate_per_grams_list[i] else None,
+            "qty_pcs": qty_pcs,
+            "met_wt_gms": met_wt_gms,
+            "value_usd": value_usd,
+            "rate_per_grams": rate_per_grams,
         }
         generated_table_data.append(table_row)
+
+        # Accumulate totals
+        total_qty_pcs += qty_pcs
+        total_met_wt_gms += met_wt_gms
+        total_value_usd += value_usd
+
+    # Add the total row to the generated table data
+    total_row_for_chalan = {
+        "rm": "TOTAL",
+        "qty_pcs": total_qty_pcs,
+        "met_wt_gms": total_met_wt_gms,
+        "value_usd": total_value_usd,
+        "rate_per_grams": None,  # Set to `None` if no total for this column is required
+    }
+    generated_table_data.append(total_row_for_chalan)
+
+    # Debug: Print generated table data
+    print("Generated Table Data:", generated_table_data)
 
     # Convert table data to JSON
     table_data_json = json.dumps(generated_table_data)
@@ -713,17 +692,20 @@ def process_file():
     """
     cur.execute(insert_generated_table_query, (challan_no_value, table_data_json))
     mysql.connection.commit()
-   
-   # Fetch existing table data for the given challan number
+
+    # Fetch existing table data for the given challan number
     cur = mysql.connection.cursor()
     select_generated_table_query = "SELECT data FROM generated_tables WHERE challan_no = %s"
     cur.execute(select_generated_table_query, (challan_no_value,))
     result = cur.fetchone()
 
-
     if result:
         # If data exists, load it and generate the table
         stored_table_data = json.loads(result[0])
+
+        # Debug: Print stored table data
+        print("Stored Table Data:", stored_table_data)
+
         # Use the stored data to generate the table in Excel
         for i, row in enumerate(stored_table_data):
             ws.cell(row=data_start_row + i, column=1, value=row['rm']).alignment = LEFT_ALIGN
@@ -731,11 +713,16 @@ def process_file():
                 ws.cell(row=data_start_row + i, column=2, value=row['qty_pcs']).alignment = LEFT_ALIGN
             ws.cell(row=data_start_row + i, column=met_wt_gms_col, value=row['met_wt_gms']).alignment = LEFT_ALIGN
             ws.cell(row=data_start_row + i, column=value_usd_col, value=row['value_usd']).alignment = LEFT_ALIGN
-            ws.cell(row=data_start_row + i, column=rate_per_grams_col, value=row['rate_per_grams']).alignment = LEFT_ALIGN
+
+            # Add logic for total row formatting
+            if row['rm'] == "TOTAL":
+                ws.cell(row=data_start_row + i, column=1).font = Font(bold=True)
+                ws.cell(row=data_start_row + i, column=2).font = Font(bold=True)
+                ws.cell(row=data_start_row + i, column=met_wt_gms_col).font = Font(bold=True)
+                ws.cell(row=data_start_row + i, column=value_usd_col).font = Font(bold=True)
     else:
-        # Proceed to generate the table and store it in the database as shown above
-        pass
-    
+        print("No existing data found for challan number:", challan_no_value)
+
     
    # Form input
     rm_list_for_present_ppl = request.form.getlist('rm[]')  # Ensure it's a list
@@ -745,19 +732,6 @@ def process_file():
     last_data_row_of_chalan = last_data_row + 2  # Last row where chalan ends
     headers_row_for_present_ppl = last_data_row_of_chalan + 6  # Header row
     data_start_row_for_present_ppl = headers_row_for_present_ppl + 1  # Row after headers
-
-    # Write headers
-    ws.cell(row=headers_row_for_present_ppl, column=1, value="RM.")
-    ws.cell(row=headers_row_for_present_ppl, column=1).font = Font(bold=True)
-
-    ws.cell(row=headers_row_for_present_ppl, column=2, value="Met. Wt.Gms")
-    ws.cell(row=headers_row_for_present_ppl, column=2).font = Font(bold=True)
-
-    ws.cell(row=headers_row_for_present_ppl, column=3, value="Value US$")
-    ws.cell(row=headers_row_for_present_ppl, column=3).font = Font(bold=True)
-
-    ws.cell(row=headers_row_for_present_ppl, column=4, value="Inv Pure Wt")
-    ws.cell(row=headers_row_for_present_ppl, column=4).font = Font(bold=True)
 
      # Get the input value for Challan No.
     challan_no_value = request.form.get('challan_no', '')
@@ -813,29 +787,30 @@ def process_file():
             # Create an empty DataFrame with the necessary columns
             group_for_reconciliation = pd.DataFrame(columns=["Inv Rate", "Inv Rm Wt", "Inv Pure Wt", "Inv Value"])
     
-     # Reorder Grouped DataFrame based on the input rate_per_grams_list
-    ordered_rates = [round(float(rate), 3) for rate in rate_per_grams_list if rate]  # Ensure rates are rounded
-    group_for_reconciliation = group_for_reconciliation.set_index("Inv Rate")  # Set "Inv Rate" as the index
-    group_for_reconciliation = group_for_reconciliation.loc[ordered_rates].reset_index()  # Reorder by ordered_rates and reset index
+    # Reindex with all rates from rate_per_grams_list to ensure proper order
+    ordered_rates = pd.DataFrame({'Inv Rate': rate_list})
 
+    # Merge on 'Inv Rate' ensuring both columns are of the same type and rounding
+    group_for_reconciliation['Inv Rate'] = pd.to_numeric(group_for_reconciliation['Inv Rate'], errors='coerce').round(3)
+    ordered_rates['Inv Rate'] = pd.to_numeric(ordered_rates['Inv Rate'], errors='coerce').round(3)
 
-    # if not group_for_reconciliation.empty:
-    #     for i, rm_for_present_ppl in enumerate(rm_list_for_present_ppl):
-    #         ws.cell(row=data_start_row_for_present_ppl + i, column=1, value=rm_for_present_ppl).alignment = LEFT_ALIGN
-    #         ws.cell(row=data_start_row_for_present_ppl + i, column=2, value=group_for_reconciliation.loc[i, "Inv Rm Wt"]).alignment = LEFT_ALIGN
-    #         ws.cell(row=data_start_row_for_present_ppl + i, column=3, value=group_for_reconciliation.loc[i, "Inv Value"]).alignment = LEFT_ALIGN
-    #         ws.cell(row=data_start_row_for_present_ppl + i, column=4, value=group_for_reconciliation.loc[i, "Inv Pure Wt"]).alignment = LEFT_ALIGN
-    #     else:
-    #         print("No data available for reconciliation.")
-
+    # Perform the merge (with 'left' join to retain all rows from ordered_rates)
+    group_for_reconciliation = ordered_rates.merge(
+        group_for_reconciliation,
+        on="Inv Rate",
+        how="left"
+    )
+    # Fill missing values with empty spaces or zeros as needed
+    group_for_reconciliation[["Inv Rm Wt", "Inv Pure Wt", "Inv Value"]] = (
+        group_for_reconciliation[["Inv Rm Wt", "Inv Pure Wt", "Inv Value"]].fillna("")
+    )
+    
+    # Debugging output
+    print("Final Group for Reconciliation:")
+    print(group_for_reconciliation)
+        
     # # Add "Total" row
-    total_row_index = len(rm_list_for_present_ppl)  # Position for "Total" row
-    # ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=1, value="Total").alignment = LEFT_ALIGN
-    # ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=2, value=group_for_reconciliation["Inv Rm Wt"].sum()).alignment = LEFT_ALIGN
-    # ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=3, value=group_for_reconciliation["Inv Value"].sum()).alignment = LEFT_ALIGN
-    # ws.cell(row=data_start_row_for_present_ppl + total_row_index, column=4, value=group_for_reconciliation["Inv Pure Wt"].sum()).alignment = LEFT_ALIGN
-    
-    
+    total_row_index = len(rm_list_for_present_ppl)  # Position for "Total" row 
             
     # Get the input without forcing it into a string
     banker_detail_value = request.form.get('Banker_details', '')
@@ -853,9 +828,6 @@ def process_file():
     rm_values_string = ', '.join([str(rm) for rm in rm_list])  # Join all RM values with commas
     ws['E27'] = f"{banker_detail_value} {rm_values_string}"  # Combine Banker details with RM values
     ws['E27'].alignment = Alignment(horizontal='left', vertical='top', wrap_text=False)
-    
-    
-   
 
     # Add "Challan No." header at row 29, column E
     ws['E29'] = "Challan No."
@@ -880,220 +852,8 @@ def process_file():
 
 
     # Calculate where to print the exchange rate
-    last_data_row_of_present_ppl = data_start_row_for_present_ppl + total_row_index + 5
-    table = last_data_row_of_present_ppl + 40
-    exchange_rate_row_number = table + 17 # Add a 5-line gap (3 for data, 2 for space)
-
-    diamond_stone_table = df.loc[df['Ctg'].isin(['C','D'])].groupby(["Ctg"], dropna=False).agg({
-        "Inv Rm Wt": "sum",
-        "Inv Value": "sum",
-        "Inv Rm Qty": "sum"
-    }).reset_index()
+    # last_data_row_of_present_ppl = data_start_row_for_present_ppl + total_row_index + 5
    
-    diamond_wt = diamond_value = diamond_qty = CS_wt = CS_value = CS_qty = 0
-    for i, row in diamond_stone_table.iterrows():
-        if row['Ctg'] == 'D':
-            diamond_wt = round(row['Inv Rm Wt'], 3)
-            diamond_value = round(row['Inv Value'],2)
-            diamond_qty = (row['Inv Rm Qty'])
-        elif row['Ctg'] == 'C':
-            CS_wt = round(row['Inv Rm Wt'],3)
-            CS_value = round(row['Inv Value'],2)
-            CS_qty = (row['Inv Rm Qty'])
-   
-   # Adding "Type", "PCS", "Total CTW", "Net Payable by You"
-    set_cell(ws, f'B{table}', "PCS", font=BOLD_FONT, alignment=LEFT_ALIGN)
-    set_cell(ws, f'C{table}', "Total CTW", font=BOLD_FONT, alignment=LEFT_ALIGN)
-    set_cell(ws, f'D{table}', "Net Payable by You", font=BOLD_FONT, alignment=LEFT_ALIGN)
-    set_cell(ws, f'A{table}', "Type", font=BOLD_FONT, alignment=LEFT_ALIGN)
-
-    # Adding data row (e.g., "Diamond")
-    set_cell(ws, f'A{table + 1}', "Diamond", font=BOLD_FONT, alignment=LEFT_ALIGN)
-    set_cell(ws, f'A{table + 2}', "Precious/Semi Precious Color Stone", font=BOLD_FONT, alignment=LEFT_ALIGN)
-
-    set_cell(ws, f'A{table + 5}', "Type", font=BOLD_FONT, alignment=LEFT_ALIGN)
-    set_cell(ws, f'B{table + 5}', "Value", font=BOLD_FONT, alignment=LEFT_ALIGN)
-
-    set_cell(ws, f'A{table + 6}', "Diamond", font=BOLD_FONT, alignment=LEFT_ALIGN)
-    set_cell(ws, f'A{table + 7}', "Precious/Semi Precious Color Stone", font=BOLD_FONT, alignment=LEFT_ALIGN)
-    set_cell(ws, f'A{table + 8}', "Labour", font=BOLD_FONT, alignment=LEFT_ALIGN)
-    set_cell(ws, f'A{table + 9}', "Grand Total", font=BOLD_FONT, alignment=LEFT_ALIGN)
-    set_cell(ws, f'A{table + 3}', "Grand Total", font=BOLD_FONT, alignment=LEFT_ALIGN)
-    
-    target_row = table + 11  # Replace 'table' with your variable's actual value
-    target_row_calculation = target_row + 1
-    target_row_calculation_for_net_realization =  target_row_calculation + 1
-    last_row_of_total_values = last_row_of_total.tolist()
-
-    for col_idx, value in enumerate(last_row_of_total_values, start=1):  # start=1 for column A
-        ws.cell(row=target_row, column=col_idx, value=value)
-        
-    from openpyxl.utils import get_column_letter
-    if isinstance(last_row_of_total, pd.Series):
-        
-        # Calculate the last column index
-        last_column_index = len(last_row_of_total_values)  # Don't subtract 1, just use len() to get the total number of columns
-
-        # Use get_column_letter to correctly convert the index to Excel column letters
-        last_column_letter = get_column_letter(last_column_index)  # This will handle 'A', 'Z', 'AA', 'BZ', etc.
-        last_column_letter_for_metal = get_column_letter(last_column_index)  # Use same logic for the metal column
-
-
-        # Now, setting the cell values correctly
-        set_cell(ws, f'{last_column_letter}{target_row_calculation}', "Less: Metal Cost US$", font=BOLD_FONT, alignment=LEFT_ALIGN)
-        set_cell(ws, f'{last_column_letter}{target_row_calculation_for_net_realization}', "Net Realization US$", font=BOLD_FONT, alignment=LEFT_ALIGN)
-
-# Further code continues...
-    final_output.columns = final_output.columns.str.strip().str.lower()  # Make column names lowercase and strip spaces
-
-    # Step 2: Check if 'metal amt.' column exists (case insensitive)
-    metal_amt_column_name = [col for col in final_output.columns if 'metal amt' in col.lower()]
-    amount_col = [col for col in final_output.columns if 'amount us$' in col.lower()]
-    
-    if metal_amt_column_name:
-        # Step 3: Sum the 'Metal Amt.' column
-        metal_amt_sum = final_output[metal_amt_column_name[0]].sum()  # Use the first matching column
-        set_cell(ws, f'{last_column_letter_for_metal}{target_row_calculation}', metal_amt_sum, font=BOLD_FONT, alignment=LEFT_ALIGN)
-    
-
-    if amount_col:
-        # Step 3: Sum the 'Metal Amt.' column
-        amt_col_sum = final_output[amount_col[0]].sum()  # Use the first matching column
-        net_realization_value = amt_col_sum - metal_amt_sum
-        set_cell(ws, f'{last_column_letter_for_metal}{target_row_calculation_for_net_realization}', net_realization_value, font=BOLD_FONT, alignment=LEFT_ALIGN)
-      
-    if "Inv Rm Qty" in df.columns:
-        ws[f'B{table + 1}'] = diamond_qty 
-        ws[f'B{table + 1}'].font = BOLD_FONT
-        ws[f'B{table + 1}'].alignment = LEFT_ALIGN
-        ws[f'B{table + 2}'] = CS_qty
-        ws[f'B{table + 2}'].font = BOLD_FONT
-        ws[f'B{table + 2}'].alignment = LEFT_ALIGN
-        total_qty_table = diamond_qty + CS_qty
-      
-        ws[f'B{table + 3}'] = total_qty_table 
-        ws[f'B{table + 3}'].font = BOLD_FONT
-        ws[f'B{table + 3}'].alignment = LEFT_ALIGN
-
-    if "Inv Rm Wt" in df.columns:
-        ws[f'C{table + 1}'] = diamond_wt
-        ws[f'C{table + 1}'].font = BOLD_FONT
-        ws[f'C{table + 1}'].alignment = LEFT_ALIGN
-        ws[f'C{table + 2}'] = CS_wt 
-        ws[f'C{table + 2}'].font = BOLD_FONT
-        ws[f'C{table + 2}'].alignment = LEFT_ALIGN
-
-        total_rm_wt_table = round(diamond_wt + CS_wt,3)
-        ws[f'C{table + 3}'] = total_rm_wt_table 
-        ws[f'C{table + 3}'].font = BOLD_FONT
-        ws[f'C{table + 3}'].alignment = LEFT_ALIGN
-
-    if "Inv Value" in df.columns:
-        try:
-            # Diamond values
-            ws[f'D{table + 1}'] = diamond_value
-            ws[f'B{table + 6}'] = diamond_value
-            ws[f'D{table + 1}'].font = BOLD_FONT
-            ws[f'D{table + 1}'].alignment = LEFT_ALIGN
-
-            # Precious/Semi-Precious Stone values
-            ws[f'D{table + 2}'] = CS_value
-            ws[f'B{table + 7}'] = CS_value
-            ws[f'D{table + 2}'].font = BOLD_FONT
-            ws[f'D{table + 2}'].alignment = LEFT_ALIGN
-
-
-            total_inv_value_table = round(diamond_value + CS_value,2)
-            ws[f'D{table + 3}'] = total_inv_value_table 
-            ws[f'D{table + 3}'].font = BOLD_FONT
-            ws[f'D{table + 3}'].alignment = LEFT_ALIGN
-        except Exception as e:
-            print(f"Error processing 'Inv Value': {e}")
-   
-    df.columns = df.columns.str.strip()  # Ensure no leading/trailing spaces in column names
-    if 'Labour' in df.columns:
-        try:
-            df['Labour'] = pd.to_numeric(df['Labour'], errors='coerce')
-            labour_sum = round(df['Labour'].sum(skipna=True),2)
-            ws[f'B{table + 8}'] = labour_sum
-        except Exception as e:
-            print(f"Error processing 'Labour': {e}")
-    else:
-        labour_sum = 0
-        print("No 'Labour' column found. Setting labour_sum to 0.")
-
-    # Calculate table total
-    
-    table_total = round(diamond_value + CS_value + labour_sum,2)
-    ws[f'B{table + 9}'] = table_total  # Write total to the cell
-
-    # Split the number into dollars and cents
-    dollars = int(table_total)
-    cents = round((table_total - dollars) * 100)  # Get the cents part as an integer
-
-    # Convert the dollar part and cents part to words
-    dollar_words = num2words(dollars).title()  # Convert to words and capitalize each word
-    cents_words = num2words(cents).title()  # Convert cents to words
-
-    # Create the final text in the required format
-    if cents > 0:
-        words = f"Total Net Realisation Dollar {dollar_words} & Cent {cents_words} Only."
-    else:
-        words = f"Total Net Realisation Dollar {dollar_words} Only."
-
-    # Write the final text to the Excel file
-    # ws[f'B{table + 10}'] = words  # Write the text in the next row
-    
-   
-    exchange_rate_value = float(request.form['exchange_rate'])  
-    amount_chargeable_row_number = exchange_rate_row_number + 2  # Leave 1 row after exchange rate for amount chargeable 
-    line_1 = amount_chargeable_row_number + 3  # Leave 1 row after exchange rate for amount chargeable 
-    line_2 = line_1 + 3  # Leave 2 row after line 1 for line 2
-    line_3 = line_2 + 2  # Leave 2 row after line 1 for line 2
-    line_4 = line_3 + 2  # Leave 2 row after line 1 for line 2
-    line_5 = line_4 + 1 # Leave 2 row after line 1 for line 2
-    line_6 = line_5 + 2 # Leave 2 row after line 1 for line 2
-    line_7 = line_6 + 1 # Leave 1 row after line 1 for line 2
-    line_8 = line_7 + 1 # Leave 1 row after line 1 for line 2
-
-    # Write the Exchange Rate in the first column
-    ws.cell(row=exchange_rate_row_number, column=1, value=f"Exchange Rate: {exchange_rate_value}")
-    from openpyxl.styles import Font
-    ws.cell(row=exchange_rate_row_number, column=1).font = Font(bold=True)  # Make the text bold
-    
-     # Leave one blank row and write "Amount Chargeable (in Words)" below the Exchange Rate
-    ws.cell(row=amount_chargeable_row_number, column=1, value="Amount Chargeable (in Words)")
-    ws.cell(row=amount_chargeable_row_number, column=3, value= words)
-
-    ws.cell(row=amount_chargeable_row_number, column=1).font = Font(bold=True)  # Make the text bold
-    ws.cell(row=amount_chargeable_row_number, column=3).font = Font(bold=True)  # Make the text bold
-  
-    ws.cell(row=line_1, column=1, value="""I/we hereby certify that my/our registration certificate under Goods and Services Tax Act,2017 is in force on the date on which the supply of goods / services specified in this Tax Invoice/ Consignment sale is made by me/us and that the transaction of sale covered by this tax invoice/Consignment sales has been effected by me/us & it shall be accounted for in the turnover of sales while filling of return & the due tax, if any, payable on the sale has been paid or shall paid.""")																						
-    ws.cell(row=line_1, column=1).font = Font(bold=True)  # Make the text bold
-   
-    ws.cell(row=line_2, column=1, value="""SUPPLY TO SEZ UNIT IS UNDER ZERO RATED SUPPLY AS PER THE IGST RULE.""")
-    ws.cell(row=line_2, column=1).font = Font(bold=True)  # Make the text bold
-    
-    ws.cell(row=line_3, column=1, value="""SUPPLY MEANT FOR EXPORT/SUPPLY TO SEZ UNIT UNDER BOND OR LETTER OF UNDERTAKING WITHOUT PAYMENT OF INTERGRATED TAX AS PER THE IGST RULE""")
-    ws.cell(row=line_3, column=1).font = Font(bold=True)  # Make the text bold
-    
-    # Print the same data inside the provided sentence
-    formatted_sentence = f"Gold & Silver received from SEZ UNIT vide invoice No.{invoice_no_date} being returned after job work"
-    ws.cell(row=line_4, column=1, value=formatted_sentence) 
-    ws.cell(row=line_4, column=1).font = Font(bold=True)  # Make the text bold
-    
-    ws.cell(row=line_5, column=1, value="""This Invoice is for only Labour & Diamond Charges""")
-    ws.cell(row=line_5, column=1).font = Font(bold=True)  # Make the text bold
-   
-    ws.cell(row=line_6, column=1, value="Declaration")
-    ws.cell(row=line_6, column=1).font = Font(bold=True)  # Make the text bold
-    
-    ws.cell(row=line_7, column=1, value="We declare that this Invoice shows the actual price of the")
-    ws.cell(row=line_7, column=1).font = Font(bold=True)  # Make the text bold
-   
-    ws.cell(row=line_8, column=1, value="goods described and that all particulars are true and correct.")
-    ws.cell(row=line_8, column=1).font = Font(bold=True)  # Make the text bold
-
     try:
         # Step 1: Get Challan No, RM list, and Invoice No Date
         challan_no_value = request.form.get('challan_no', '').strip()
@@ -1138,6 +898,16 @@ def process_file():
 
         # Step 4: Insert new data for this batch
         generated_table = group_for_reconciliation.to_dict(orient='records')
+        
+        # Validate and sanitize the data in generated_table
+        for i, row in enumerate(generated_table):
+            try:
+                row["Inv Rm Wt"] = float(row["Inv Rm Wt"]) if str(row["Inv Rm Wt"]).strip() else 0.0
+                row["Inv Value"] = float(row["Inv Value"]) if str(row["Inv Value"]).strip() else 0.0
+                row["Inv Pure Wt"] = float(row["Inv Pure Wt"]) if str(row["Inv Pure Wt"]).strip() else 0.0
+            except ValueError as e:
+                return jsonify({'error': f"Invalid data in row {i+1}: {e}"})
+
         data_to_insert = [
             (
                 challan_id,
@@ -1166,7 +936,7 @@ def process_file():
         cur.execute(fetch_batches_query, (challan_id,))
         batches = cur.fetchall()
 
-        current_row = last_data_row_of_present_ppl + 5
+        current_row = data_start_row_for_present_ppl + 5
         headers = ["RM", "Met Wt Gms", "Value USD", "Inv Pure Wt"]
 
         for batch in batches:
@@ -1180,63 +950,367 @@ def process_file():
             cur.execute(fetch_records_query, (batch_id,))
             rows = cur.fetchall()
 
+           
+            # Write batch title
+            ws.cell(row=current_row, column=1, value=f"Less: Metal Used In Packing List {invoice_no_date}")
+            # Apply bold styling to the top-left cell
+            ws.cell(row=current_row, column=1).font = Font(bold=True)       
+            ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=4)
+            current_row += 1
+            
             # Reset totals for the current batch
             total_met_wt_gms = 0
             total_value_usd = 0
 
-            # Write batch title
-            ws.cell(row=current_row, column=1, value=f"Less: Metal Used In Packing List {invoice_no_date}")
-            ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=4)
-            current_row += 1
+            # Dictionary to track totals for each RM
+            rm_totals = {rm: {"met_wt_gms": 0, "value_usd": 0} for rm in rm_list_for_present_ppl}
 
 
             # Write headers
+            # Write headers for the batch
             for col_num, header in enumerate(headers, 1):
                 ws.cell(row=current_row, column=col_num, value=header)
             current_row += 1
-
-            # Write data rows and calculate totals
+        # Write data rows and calculate batch totals
             for row in rows:
+                rm_name = row[0]  # Assuming RM is the first column in the row
+                met_wt_gms = float(row[1])  # Met Wt Gms (2nd column)
+                value_usd = float(row[2])  # Value USD (3rd column)
+
+                # Add to worksheet
                 for col_num, cell_value in enumerate(row, 1):
                     ws.cell(row=current_row, column=col_num, value=cell_value)
-                    if col_num == 2:  # Met Wt Gms
-                        total_met_wt_gms += float(cell_value)
-                    elif col_num == 3:  # Value USD
-                        total_value_usd += float(cell_value)
+
+                # Update totals for the batch
+                total_met_wt_gms += met_wt_gms
+                total_value_usd += value_usd
+
+                # Update RM-specific totals
+                if rm_name in rm_totals:
+                    rm_totals[rm_name]["met_wt_gms"] += met_wt_gms
+                    rm_totals[rm_name]["value_usd"] += value_usd
+
                 current_row += 1
 
-            # Add "Total" row
-            ws.cell(row=current_row, column=1, value="Total")
-            ws.cell(row=current_row, column=2, value=total_met_wt_gms)
-            ws.cell(row=current_row, column=3, value=total_value_usd)
-            current_row += 2  # Add spacing
+        # Add "Total" row for the batch
+        ws.cell(row=current_row, column=1, value="Total")
+        ws.cell(row=current_row, column=2, value=total_met_wt_gms)
+        ws.cell(row=current_row, column=3, value=total_value_usd)
+        current_row += 2  # Add spacing
 
-        # Add Calculated Table After All Batches
-        ws.cell(row=current_row, column=1, value="Balance Loose Metal")
-        ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=4)
-        current_row += 1
+    # Step 1: Get Challan Data
+        select_challan_data_query = """
+            SELECT JSON_EXTRACT(data, '$') AS challan_data 
+            FROM generated_tables 
+            WHERE challan_no = %s
+        """
+        cur.execute(select_challan_data_query, (challan_no_value,))
+        challan_data_result = cur.fetchone()
 
-        # Write headers for the calculated table
-        calc_headers = ["RM", "Met Wt Gms", "Value USD"]
-        for col_num, header in enumerate(calc_headers, 1):
+        if not challan_data_result:
+            return jsonify({'error': 'No challan data found for the provided challan number.'})
+
+        challan_data = json.loads(challan_data_result[0])
+
+        # Create a mapping for challan data by `rm`
+        challan_map = {
+            row['rm']: {
+                'met_wt_gms': row.get('met_wt_gms', 0),
+                'value_usd': row.get('value_usd', 0),
+            }
+            for row in challan_data
+        }
+
+        # Step 2: Aggregate Batch Data
+        aggregate_batch_query = """
+            SELECT rm, 
+                SUM(met_wt_gms) AS total_met_wt_gms, 
+                SUM(value_usd) AS total_value_usd 
+            FROM reconciliation 
+            WHERE challan_id = %s 
+            GROUP BY rm
+        """
+        cur.execute(aggregate_batch_query, (challan_id,))
+        batch_data = cur.fetchall()
+
+        # Create a mapping for batch totals by `rm`
+        batch_map = {
+            row[0]: {
+                'total_met_wt_gms': row[1] or 0,
+                'total_value_usd': row[2] or 0,
+            }
+            for row in batch_data
+        }
+
+        # Step 3: Compute Balance Table
+        balance_table = []
+        total_met_wt_gms = 0
+        total_value_usd = 0
+
+        # Filter out rows where 'rm' is 'TOTAL' from challan_map
+        filtered_challan_map = {
+            rm: values for rm, values in challan_map.items() if rm != "TOTAL"
+        }
+
+        for rm, challan_values in filtered_challan_map.items():
+            batch_values = batch_map.get(rm, {'total_met_wt_gms': 0, 'total_value_usd': 0})
+
+            # Convert all values to float before subtraction
+            balance_row = {
+                'rm': rm,
+                'balance_met_wt_gms': float(challan_values['met_wt_gms']) - float(batch_values['total_met_wt_gms']),
+                'balance_value_usd': float(challan_values['value_usd']) - float(batch_values['total_value_usd']),
+            }
+            balance_table.append(balance_row)
+
+            # Accumulate totals for the columns
+            total_met_wt_gms += balance_row['balance_met_wt_gms']
+            total_value_usd += balance_row['balance_value_usd']
+
+        # Add Total Row
+        total_row_for_reco = {
+            'rm': 'TOTAL',
+            'balance_met_wt_gms': total_met_wt_gms,
+            'balance_value_usd': total_value_usd,
+        }
+        balance_table.append(total_row_for_reco)
+
+        # Step 4: Add Balance Table to Excel
+        current_row += 2  # Add spacing after the last batch table
+        ws.cell(row=current_row, column=1, value="Balance Table")
+        ws.cell(row=current_row, column=1).font = Font(bold=True)
+        ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=3)
+        current_row += 2
+
+        # Write Balance Table Headers
+        balance_headers = ["RM", "Met Wt Gms", "Value USD"]
+        for col_num, header in enumerate(balance_headers, 1):
             ws.cell(row=current_row, column=col_num, value=header)
         current_row += 1
 
-        # Write calculated rows
-        for i, rm in enumerate(rm_list_for_present_ppl):
-            met_wt_gms = float(met_wt_gms_list[i]) if met_wt_gms_list[i] else 0
-            value_usd = float(value_usd_list[i]) if value_usd_list[i] else 0
-
-            # Calculate absolute differences
-            diff_met_wt_gms = abs(total_met_wt_gms - met_wt_gms)
-            diff_value_usd = abs(total_value_usd - value_usd)
-
-            ws.cell(row=current_row, column=1, value=rm)
-            ws.cell(row=current_row, column=2, value=diff_met_wt_gms)
-            ws.cell(row=current_row, column=3, value=diff_value_usd)
+       # Write Balance Table Data
+        for row in balance_table:
+            ws.cell(row=current_row, column=1, value=row['rm'])
+            ws.cell(row=current_row, column=2, value=row['balance_met_wt_gms'])
+            ws.cell(row=current_row, column=3, value=row['balance_value_usd'])
             current_row += 1
 
         cur.close()
+
+        table = current_row + 5
+        exchange_rate_row_number = table + 15 # Add a 5-line gap (3 for data, 2 for space)
+
+        diamond_stone_table = df.loc[df['Ctg'].isin(['C','D'])].groupby(["Ctg"], dropna=False).agg({
+            "Inv Rm Wt": "sum",
+            "Inv Value": "sum",
+            "Inv Rm Qty": "sum"
+        }).reset_index()
+    
+        diamond_wt = diamond_value = diamond_qty = CS_wt = CS_value = CS_qty = 0
+        for i, row in diamond_stone_table.iterrows():
+            if row['Ctg'] == 'D':
+                diamond_wt = round(row['Inv Rm Wt'], 3)
+                diamond_value = round(row['Inv Value'],2)
+                diamond_qty = (row['Inv Rm Qty'])
+            elif row['Ctg'] == 'C':
+                CS_wt = round(row['Inv Rm Wt'],3)
+                CS_value = round(row['Inv Value'],2)
+                CS_qty = (row['Inv Rm Qty'])
+    
+    # Adding "Type", "PCS", "Total CTW", "Net Payable by You"
+        set_cell(ws, f'B{table}', "PCS", font=BOLD_FONT, alignment=LEFT_ALIGN)
+        set_cell(ws, f'C{table}', "Total CTW", font=BOLD_FONT, alignment=LEFT_ALIGN)
+        set_cell(ws, f'D{table}', "Net Payable by You", font=BOLD_FONT, alignment=LEFT_ALIGN)
+        set_cell(ws, f'A{table}', "Type", font=BOLD_FONT, alignment=LEFT_ALIGN)
+
+        # Adding data row (e.g., "Diamond")
+        set_cell(ws, f'A{table + 1}', "Diamond", font=BOLD_FONT, alignment=LEFT_ALIGN)
+        set_cell(ws, f'A{table + 2}', "Precious/Semi Precious Color Stone", font=BOLD_FONT, alignment=LEFT_ALIGN)
+
+        set_cell(ws, f'A{table + 5}', "Type", font=BOLD_FONT, alignment=LEFT_ALIGN)
+        set_cell(ws, f'B{table + 5}', "Value", font=BOLD_FONT, alignment=LEFT_ALIGN)
+
+        set_cell(ws, f'A{table + 6}', "Diamond", font=BOLD_FONT, alignment=LEFT_ALIGN)
+        set_cell(ws, f'A{table + 7}', "Precious/Semi Precious Color Stone", font=BOLD_FONT, alignment=LEFT_ALIGN)
+        set_cell(ws, f'A{table + 8}', "Labour", font=BOLD_FONT, alignment=LEFT_ALIGN)
+        set_cell(ws, f'A{table + 9}', "Grand Total", font=BOLD_FONT, alignment=LEFT_ALIGN)
+        set_cell(ws, f'A{table + 3}', "Grand Total", font=BOLD_FONT, alignment=LEFT_ALIGN)
+        
+        target_row = table + 11  # Replace 'table' with your variable's actual value
+        target_row_calculation = target_row + 1
+        target_row_calculation_for_net_realization =  target_row_calculation + 1
+        last_row_of_total_values = last_row_of_total.tolist()
+
+        for col_idx, value in enumerate(last_row_of_total_values, start=1):  # start=1 for column A
+            ws.cell(row=target_row, column=col_idx, value=value)
+            
+        from openpyxl.utils import get_column_letter
+        if isinstance(last_row_of_total, pd.Series):
+            
+            # Calculate the last column index
+            last_column_index = len(last_row_of_total_values)  # Don't subtract 1, just use len() to get the total number of columns
+
+            # Use get_column_letter to correctly convert the index to Excel column letters
+            last_column_letter = get_column_letter(last_column_index)  # This will handle 'A', 'Z', 'AA', 'BZ', etc.
+            last_column_letter_for_metal = get_column_letter(last_column_index)  # Use same logic for the metal column
+
+
+            # Now, setting the cell values correctly
+            set_cell(ws, f'{last_column_letter}{target_row_calculation}', "Less: Metal Cost US$", font=BOLD_FONT, alignment=LEFT_ALIGN)
+            set_cell(ws, f'{last_column_letter}{target_row_calculation_for_net_realization}', "Net Realization US$", font=BOLD_FONT, alignment=LEFT_ALIGN)
+
+    # Further code continues...
+        final_output.columns = final_output.columns.str.strip().str.lower()  # Make column names lowercase and strip spaces
+
+        # Step 2: Check if 'metal amt.' column exists (case insensitive)
+        metal_amt_column_name = [col for col in final_output.columns if 'metal amt' in col.lower()]
+        amount_col = [col for col in final_output.columns if 'amount us$' in col.lower()]
+        
+        if metal_amt_column_name:
+            # Step 3: Sum the 'Metal Amt.' column
+            metal_amt_sum = final_output[metal_amt_column_name[0]].sum()  # Use the first matching column
+            set_cell(ws, f'{last_column_letter_for_metal}{target_row_calculation}', metal_amt_sum, font=BOLD_FONT, alignment=LEFT_ALIGN)
+        
+
+        if amount_col:
+            # Step 3: Sum the 'Metal Amt.' column
+            amt_col_sum = final_output[amount_col[0]].sum()  # Use the first matching column
+            net_realization_value = amt_col_sum - metal_amt_sum
+            set_cell(ws, f'{last_column_letter_for_metal}{target_row_calculation_for_net_realization}', net_realization_value, font=BOLD_FONT, alignment=LEFT_ALIGN)
+        
+        if "Inv Rm Qty" in df.columns:
+            ws[f'B{table + 1}'] = diamond_qty 
+            ws[f'B{table + 1}'].font = BOLD_FONT
+            ws[f'B{table + 1}'].alignment = LEFT_ALIGN
+            ws[f'B{table + 2}'] = CS_qty
+            ws[f'B{table + 2}'].font = BOLD_FONT
+            ws[f'B{table + 2}'].alignment = LEFT_ALIGN
+            total_qty_table = diamond_qty + CS_qty
+        
+            ws[f'B{table + 3}'] = total_qty_table 
+            ws[f'B{table + 3}'].font = BOLD_FONT
+            ws[f'B{table + 3}'].alignment = LEFT_ALIGN
+
+        if "Inv Rm Wt" in df.columns:
+            ws[f'C{table + 1}'] = diamond_wt
+            ws[f'C{table + 1}'].font = BOLD_FONT
+            ws[f'C{table + 1}'].alignment = LEFT_ALIGN
+            ws[f'C{table + 2}'] = CS_wt 
+            ws[f'C{table + 2}'].font = BOLD_FONT
+            ws[f'C{table + 2}'].alignment = LEFT_ALIGN
+
+            total_rm_wt_table = round(diamond_wt + CS_wt,3)
+            ws[f'C{table + 3}'] = total_rm_wt_table 
+            ws[f'C{table + 3}'].font = BOLD_FONT
+            ws[f'C{table + 3}'].alignment = LEFT_ALIGN
+
+        if "Inv Value" in df.columns:
+            try:
+                # Diamond values
+                ws[f'D{table + 1}'] = diamond_value
+                ws[f'B{table + 6}'] = diamond_value
+                ws[f'D{table + 1}'].font = BOLD_FONT
+                ws[f'D{table + 1}'].alignment = LEFT_ALIGN
+
+                # Precious/Semi-Precious Stone values
+                ws[f'D{table + 2}'] = CS_value
+                ws[f'B{table + 7}'] = CS_value
+                ws[f'D{table + 2}'].font = BOLD_FONT
+                ws[f'D{table + 2}'].alignment = LEFT_ALIGN
+
+
+                total_inv_value_table = round(diamond_value + CS_value,2)
+                ws[f'D{table + 3}'] = total_inv_value_table 
+                ws[f'D{table + 3}'].font = BOLD_FONT
+                ws[f'D{table + 3}'].alignment = LEFT_ALIGN
+            except Exception as e:
+                print(f"Error processing 'Inv Value': {e}")
+    
+        df.columns = df.columns.str.strip()  # Ensure no leading/trailing spaces in column names
+        if 'Labour' in df.columns:
+            try:
+                df['Labour'] = pd.to_numeric(df['Labour'], errors='coerce')
+                labour_sum = round(df['Labour'].sum(skipna=True),2)
+                ws[f'B{table + 8}'] = labour_sum
+            except Exception as e:
+                print(f"Error processing 'Labour': {e}")
+        else:
+            labour_sum = 0
+            print("No 'Labour' column found. Setting labour_sum to 0.")
+
+        # Calculate table total
+        
+        table_total = round(diamond_value + CS_value + labour_sum,2)
+        ws[f'B{table + 9}'] = table_total  # Write total to the cell
+
+        # Split the number into dollars and cents
+        dollars = int(table_total)
+        cents = round((table_total - dollars) * 100)  # Get the cents part as an integer
+
+        # Convert the dollar part and cents part to words
+        dollar_words = num2words(dollars).title()  # Convert to words and capitalize each word
+        cents_words = num2words(cents).title()  # Convert cents to words
+
+        # Create the final text in the required format
+        if cents > 0:
+            words = f"Total Net Realisation Dollar {dollar_words} & Cent {cents_words} Only."
+        else:
+            words = f"Total Net Realisation Dollar {dollar_words} Only."
+
+        # Write the final text to the Excel file
+        # ws[f'B{table + 10}'] = words  # Write the text in the next row
+        
+    
+        exchange_rate_value = float(request.form['exchange_rate'])  
+        amount_chargeable_row_number = exchange_rate_row_number + 2  # Leave 1 row after exchange rate for amount chargeable 
+        line_1 = amount_chargeable_row_number + 3  # Leave 1 row after exchange rate for amount chargeable 
+        line_2 = line_1 + 3  # Leave 2 row after line 1 for line 2
+        line_3 = line_2 + 2  # Leave 2 row after line 1 for line 2
+        line_4 = line_3 + 2  # Leave 2 row after line 1 for line 2
+        line_5 = line_4 + 1 # Leave 2 row after line 1 for line 2
+        line_6 = line_5 + 2 # Leave 2 row after line 1 for line 2
+        line_7 = line_6 + 1 # Leave 1 row after line 1 for line 2
+        line_8 = line_7 + 1 # Leave 1 row after line 1 for line 2
+
+        # Write the Exchange Rate in the first column
+        ws.cell(row=exchange_rate_row_number, column=1, value=f"Exchange Rate: {exchange_rate_value}")
+        from openpyxl.styles import Font
+        ws.cell(row=exchange_rate_row_number, column=1).font = Font(bold=True)  # Make the text bold
+        
+        # Leave one blank row and write "Amount Chargeable (in Words)" below the Exchange Rate
+        ws.cell(row=amount_chargeable_row_number, column=1, value="Amount Chargeable (in Words)")
+        ws.cell(row=amount_chargeable_row_number, column=3, value= words)
+
+        ws.cell(row=amount_chargeable_row_number, column=1).font = Font(bold=True)  # Make the text bold
+        ws.cell(row=amount_chargeable_row_number, column=3).font = Font(bold=True)  # Make the text bold
+    
+        ws.cell(row=line_1, column=1, value="""I/we hereby certify that my/our registration certificate under Goods and Services Tax Act,2017 is in force on the date on which the supply of goods / services specified in this Tax Invoice/ Consignment sale is made by me/us and that the transaction of sale covered by this tax invoice/Consignment sales has been effected by me/us & it shall be accounted for in the turnover of sales while filling of return & the due tax, if any, payable on the sale has been paid or shall paid.""")																						
+        ws.cell(row=line_1, column=1).font = Font(bold=True)  # Make the text bold
+    
+        ws.cell(row=line_2, column=1, value="""SUPPLY TO SEZ UNIT IS UNDER ZERO RATED SUPPLY AS PER THE IGST RULE.""")
+        ws.cell(row=line_2, column=1).font = Font(bold=True)  # Make the text bold
+        
+        ws.cell(row=line_3, column=1, value="""SUPPLY MEANT FOR EXPORT/SUPPLY TO SEZ UNIT UNDER BOND OR LETTER OF UNDERTAKING WITHOUT PAYMENT OF INTERGRATED TAX AS PER THE IGST RULE""")
+        ws.cell(row=line_3, column=1).font = Font(bold=True)  # Make the text bold
+        
+        # Print the same data inside the provided sentence
+        formatted_sentence = f"Gold & Silver received from SEZ UNIT vide invoice No.{invoice_no_date} being returned after job work"
+        ws.cell(row=line_4, column=1, value=formatted_sentence) 
+        ws.cell(row=line_4, column=1).font = Font(bold=True)  # Make the text bold
+        
+        ws.cell(row=line_5, column=1, value="""This Invoice is for only Labour & Diamond Charges""")
+        ws.cell(row=line_5, column=1).font = Font(bold=True)  # Make the text bold
+    
+        ws.cell(row=line_6, column=1, value="Declaration")
+        ws.cell(row=line_6, column=1).font = Font(bold=True)  # Make the text bold
+        
+        ws.cell(row=line_7, column=1, value="We declare that this Invoice shows the actual price of the")
+        ws.cell(row=line_7, column=1).font = Font(bold=True)  # Make the text bold
+    
+        ws.cell(row=line_8, column=1, value="goods described and that all particulars are true and correct.")
+        ws.cell(row=line_8, column=1).font = Font(bold=True)  # Make the text bold
+
+
 
         # Save the Excel file
         output_file = os.path.join(OUTPUT_DIR, "Formatted_Invoice.xlsx")
@@ -1246,27 +1320,11 @@ def process_file():
         return send_file(output_file, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name="Formatted_Invoice.xlsx")
 
     except Exception as e:
-        return jsonify({'error': str(e)})
-
-
-
-
-
-
-    
-# def test_connection():
-#     try:
-#         # Attempt to connect and run a simple query
-#         cur = mysql.connection.cursor()
-#         cur.execute("SELECT 1")  
-#         result = cur.fetchone()
-#         cur.close()
-#         return jsonify({'success': True, 'message': 'Database connection successful', 'result': result})
-#     except Exception as e:
-#         return jsonify({'success': False, 'error': str(e)})
- 
-   
-
+        import traceback
+        error_message = str(e)
+        error_trace = traceback.format_exc()
+        print("Error Trace:", error_trace)  # Log the full traceback
+        return jsonify({'error': error_message})
             
 def get_metal_mapping(output_header, row, ctg, metal_kt):
     return_dict = {}

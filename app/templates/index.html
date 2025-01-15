@@ -107,12 +107,39 @@
         .button:active {
             transform: scale(0.95);
         }
+        /* Logo Styling */
+        .logo-container {
+            position: absolute; /* Position relative to the body */
+            top: 10px; /* Distance from the top of the viewport */
+            left: 10px; /* Distance from the left of the viewport */
+            z-index: 100; /* Ensure it stays above other elements */
+        }
+
+        .logo-container img {
+            max-width: 50px; /* Set a fixed maximum width for better visibility */
+            height: auto; /* Maintain aspect ratio */
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
     </style>
 </head>
 
 <body>
     <!-- Star background -->
     <canvas id="stars"></canvas>
+    <!-- Logo Section -->
+    <div class="logo-container">
+        <img src="/static/New_Logo_with_Name-removebg-preview.png" alt="FINOCOS Logo">
+    </div>
 
     <div class="container">
         <h1>Choose Invoice Type</h1>
