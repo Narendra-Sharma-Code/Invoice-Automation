@@ -9,7 +9,7 @@ import os
 import pandas as pd 
 import io
 # app_lab_inv = Flask(__name__)
-app_lab_inv = Blueprint('app_lab_inv', __name__, template_folder='templates' )
+app_lab_inv = Blueprint('app_lab_inv', __name__, template_folder='templates',static_folder='app/static' )
 
 # Ensure the output directory exists
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__),"outputs")
