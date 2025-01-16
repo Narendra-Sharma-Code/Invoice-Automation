@@ -971,7 +971,7 @@ def process_file():
             for col_num, header in enumerate(headers, 1):
                 ws.cell(row=current_row, column=col_num, value=header)
             current_row += 1
-        # Write data rows and calculate batch totals
+            # Write data rows and calculate batch totals
             for row in rows:
                 rm_name = row[0]  # Assuming RM is the first column in the row
                 met_wt_gms = float(row[1])  # Met Wt Gms (2nd column)
@@ -992,11 +992,11 @@ def process_file():
 
                 current_row += 1
 
-        # Add "Total" row for the batch
-        ws.cell(row=current_row, column=1, value="Total")
-        ws.cell(row=current_row, column=2, value=total_met_wt_gms)
-        ws.cell(row=current_row, column=3, value=total_value_usd)
-        current_row += 2  # Add spacing
+            # Add "Total" row for the batch
+            ws.cell(row=current_row, column=1, value="Total")
+            ws.cell(row=current_row, column=2, value=total_met_wt_gms)
+            ws.cell(row=current_row, column=3, value=total_value_usd)
+            current_row += 2  # Add spacing
 
     # Step 1: Get Challan Data
         select_challan_data_query = """
