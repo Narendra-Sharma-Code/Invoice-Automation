@@ -5,7 +5,8 @@ CATEGORY_DICT = {
     "M": "Metal",
     "D": "Diamond",
     "NTL": "NTL",
-    "STL": "STL"
+    "STL": "STL",
+    "P": "Platinum"
 }
 
 STATEMENT_DICT = {
@@ -14,6 +15,7 @@ STATEMENT_DICT = {
     "C": "Synthetic Color Stone Studded",
     "D": "Diamond Studded",
     "M": "Metal",
+    "P": "Platinum",
     "14KT": "14KT",
     "18KT": "18KT",
     "20KT": "20KT",
@@ -22,6 +24,7 @@ STATEMENT_DICT = {
     "NTL": "Comb. with Nithanol",
     "STL": "Comb. with Steel",
     "CER": "Comb. with Ceramic",
+    
 }
 
 DESIGN_CATEGORY = {
@@ -33,5 +36,6 @@ DESIGN_CATEGORY = {
     "BRC": "Bracelet",
     "BCT": "Bracelet",
     "CT" : "Component",
+    
 }
 

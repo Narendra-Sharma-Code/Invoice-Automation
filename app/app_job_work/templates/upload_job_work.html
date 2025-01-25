@@ -185,7 +185,7 @@
             position: absolute; /* Position relative to the body */
             top: 10px; /* Distance from the top of the viewport */
             left: 10px; /* Distance from the left of the viewport */
-            z-index: 100; /* Ensure it stays above other elements */
+            z-index: 100; /* Ensure it stays above other elements */ 
         }
 
         .logo-container img {
@@ -284,6 +284,9 @@
         <div class="upload-container">
             <h1>Upload Your Job Work PPL File</h1>
             <form action="{{ url_for('app_job_work.process_file') }}" method="post" enctype="multipart/form-data">
+               
+              
+               
                 <!-- File Upload Section -->
                 <div class="file-input-container">
                     <div id="dropzone">
@@ -316,16 +319,13 @@
                     placeholder="Enter Buyer's Ord No. & Date Ref." required>
                 <!-- Add spacing -->
                 <div style="margin-top: 20px;"></div>
-                
-                
-                <!-- Container for the button and Return text -->
-                <div class="switch-container">
-                    <label class="switch">
-                        <input type="checkbox">
-                        <span class="slider round"></span>
-                    </label>
-                    <span class="return-text">Return</span>
-                </div>
+                <!-- Checkbox -->
+                <label for="return-switch">
+                    <input type="checkbox" id="return-switch" name="return_switch" value="on">
+                    Return
+                </label>
+
+                <div style="margin-top: 20px;"></div>
 
                 <!-- Dynamic Table for RM, QTY PCS, Met. Wt.Gms, and Value US$ -->
                 <h2>Enter Details for RM, QTY PCS, Met. Wt.Gms, Value US$ and Rate per Grams</h2>
@@ -405,6 +405,15 @@
                 alert('Selected file: ${ file.name }');
             }
         });
+        // Add event listener for form submission if additional logic is needed
+        const form = document.querySelector("form");
+        form.addEventListener("submit", () => {
+            const checkbox = document.getElementById("return-switch");
+            console.log(`Checkbox state: ${checkbox.checked ? "on" : "off"}`);
+        });
+
+
+
     </script>
 
 </body>
