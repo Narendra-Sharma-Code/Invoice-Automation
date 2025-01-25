@@ -602,12 +602,74 @@ def process_file():
     met_wt_gms_list = request.form.getlist('met_wt_gms[]')
     value_usd_list = request.form.getlist('value_usd[]')
     rate_per_grams_list = request.form.getlist('rate[]')
+   
+    # print(request.form)  # Print all form data
+    # return_switch = request.form.get('return_switch', 'off')
+    # print(f"Return Switch Value: {return_switch}")
+
     
+#     header_row_for_return = last_row + 2
+#     content_row_for_return = header_row_for_return + 1
+
+    
+#  # Get the return_switch value, default to 'off'
+#     return_switch = request.form.get('return_switch', 'off')
+#     print(f"Return Switch Value: {return_switch}")  # Debug: Log received value
+
+#     if return_switch == "on":
+#         print("Switch is ON. Executing logic...")
+
+#         # Add header text and make it bold
+#         ws[f'A{header_row_for_return}'] = "Balance Loose Metal Return"
+#         bold_font = Font(bold=True)
+#         ws[f'A{header_row_for_return}'].font = bold_font
+
+#         # Insert values from rm_list into column A
+#         for i, value_for_return in enumerate(rm_list, start=content_row_for_return):
+#             ws[f'A{i}'] = value_for_return
+            
+#         # Dynamically adjust the next row based on inserted content
+#         content_end_row = content_row_for_return + len(rm_list)
+
+#     else:
+#         print("Switch is OFF or not set.")  # Debug: Log when switch is off
+#         # If switch is off, no data is added; use content_row_for_return directly
+#         content_end_row = content_row_for_return
+
+    return_switch = request.form.get('return_switch', 'off')
+
+    rm_list = request.form.getlist('rm[]') 
+    # Calculate starting rows
+    header_row_for_return = last_row + 2
+    content_row_for_return = header_row_for_return + 1
+
+    
+    print(f"Return Switch Value: {return_switch}")  # Debug: Log received value
+
+    if return_switch == "on":
+        print("Switch is ON. Executing logic...")
+
+        # Add header text and make it bold
+        ws[f'A{header_row_for_return}'] = "Balance Loose Metal Return"
+        bold_font = Font(bold=True)
+        ws[f'A{header_row_for_return}'].font = bold_font
+
+        # Insert values from rm_list into column A
+        for i, value_for_return in enumerate(rm_list, start=content_row_for_return):
+            ws[f'A{i}'] = value_for_return
+
+        # Dynamically adjust the next row based on inserted content
+        content_end_row = content_row_for_return + len(rm_list)
+
+    else:
+        print("Switch is OFF or not set.")  # Debug: Log when switch is off
+        # If switch is off, no data is added; use content_row_for_return directly
+        content_end_row = content_row_for_return
+
 
     # Insert Headers for RM, QTY PCS, Met. Wt.Gms, and Value US$ with bold font
-    headers_row_number = last_row + 5  # Place the headers right after the mapping section
+    headers_row_number = content_end_row + 3  # Dynamically adjust the header placement    
   
-    
     # Create the headers
     ws.cell(row=headers_row_number, column=1, value="RM.")
     ws.cell(row=headers_row_number, column=1).font = Font(bold=True)  # Make the text bold
@@ -810,7 +872,7 @@ def process_file():
     print(group_for_reconciliation)
         
     # # Add "Total" row
-    total_row_index = len(rm_list_for_present_ppl)  # Position for "Total" row 
+    # total_row_index = len(rm_list_for_present_ppl)  # Position for "Total" row 
             
     # Get the input without forcing it into a string
     banker_detail_value = request.form.get('Banker_details', '')
@@ -1063,6 +1125,7 @@ def process_file():
             }
             balance_table.append(balance_row)
 
+
             # Accumulate totals for the columns
             total_met_wt_gms += balance_row['balance_met_wt_gms']
             total_value_usd += balance_row['balance_value_usd']
@@ -1077,7 +1140,7 @@ def process_file():
 
         # Step 4: Add Balance Table to Excel
         current_row += 2  # Add spacing after the last batch table
-        ws.cell(row=current_row, column=1, value="Balance Table")
+        ws.cell(row=current_row, column=1, value="Balance Loose Metal")
         ws.cell(row=current_row, column=1).font = Font(bold=True)
         ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=3)
         current_row += 2
@@ -1096,6 +1159,21 @@ def process_file():
             current_row += 1
 
         cur.close()
+
+        if return_switch == "on":
+            # Ensure 'i' is initialized (if it's a row index for writing to Excel)
+            i = header_row_for_return  # Replace `starting_row` with the actual starting row index for your Excel sheet
+
+            for balance_row in balance_table[:-1]:
+                # Ensure the balance_row has the required keys before processing
+                if 'balance_met_wt_gms' in balance_row and 'rm' in balance_row:
+                    print(f"Writing balance_met_wt_gms: {balance_row['balance_met_wt_gms']} for RM: {balance_row['rm']}")
+                    ws[f'D{i}'] = balance_row['balance_met_wt_gms']  # Write balance_met_wt_gms to column D
+                    i += 1  # Move to the next row
+        else:
+            print(f"Skipping row due to missing keys: {balance_row}")
+
+
 
         table = current_row + 5
         exchange_rate_row_number = table + 15 # Add a 5-line gap (3 for data, 2 for space)
@@ -1325,6 +1403,18 @@ def process_file():
         error_trace = traceback.format_exc()
         print("Error Trace:", error_trace)  # Log the full traceback
         return jsonify({'error': error_message})
+     
+     
+     
+     
+def handle_return_switch(ws, rm_list, last_row, return_switch):
+   
+  
+
+    return content_end_row
+
+   
+   
             
 def get_metal_mapping(output_header, row, ctg, metal_kt):
     return_dict = {}
