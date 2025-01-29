@@ -6,7 +6,8 @@ CATEGORY_DICT = {
     "D": "Diamond",
     "NTL": "NTL",
     "STL": "STL",
-    "P": "Platinum"
+    "P": "Platinum",
+    "TTM": "Titanium",
 }
 
 STATEMENT_DICT = {
@@ -16,6 +17,7 @@ STATEMENT_DICT = {
     "D": "Diamond Studded",
     "M": "Metal",
     "P": "Platinum",
+    "TTM": "Titanium",
     "14KT": "14KT",
     "18KT": "18KT",
     "20KT": "20KT",
@@ -36,6 +38,9 @@ DESIGN_CATEGORY = {
     "BRC": "Bracelet",
     "BCT": "Bracelet",
     "CT" : "Component",
+    "BND": "Band",
+    "CHM": "Chams",
+    "NSP": "NoSpin"
     
 }
 

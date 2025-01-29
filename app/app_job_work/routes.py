@@ -10,6 +10,7 @@ from . import constants
 from num2words import num2words
 from app.extensions import mysql  # Import mysql from extensions
 import json
+from openpyxl.utils import get_column_letter
 
 # app_job_work = Flask(__name__)
 app_job_work = Blueprint('app_job_work', __name__, template_folder='templates',static_folder='app/static')
@@ -351,9 +352,11 @@ def process_file():
 
     
     set_cell(ws, f'D{start_row}', "Gross Wt (gms)", font=BOLD_FONT, alignment=CENTER_ALIGN)
+    set_cell(ws, f'E{start_row}', "pure wt (gms) 0.995 gold", font=BOLD_FONT, alignment=CENTER_ALIGN)
+    
     
    # Adding all Metal KT data headers
-    current_col = 5  # Start from column E
+    current_col = 6  # Start from column E
     for header in all_headers:  # all_headers contains Metal KT-related columns
         col_letter = ws.cell(row=start_row, column=current_col).column_letter
         set_cell(ws, f'{col_letter}{start_row}', header, font=BOLD_FONT, alignment=CENTER_ALIGN)
@@ -426,7 +429,11 @@ def process_file():
     last_col_index = ws.max_column + 1  # Determine the next available column
     last_col_letter = ws.cell(row=start_row, column=last_col_index).column_letter
     set_cell(ws, f'{last_col_letter}{start_row}', "Amount US$", font=BOLD_FONT, alignment=CENTER_ALIGN)
-
+   
+    # # Add "0.995 Gold Pure Wt" as the next column after "Amount US$"
+    # gold_pure_wt_col_index = ws.max_column + 1  # Increment by 1 for the next column
+    # gold_pure_wt_col_letter = ws.cell(row=start_row, column=gold_pure_wt_col_index).column_letter
+    # set_cell(ws, f'{gold_pure_wt_col_letter}{start_row}', "pure wt (gms) 0.995 gold", font=BOLD_FONT, alignment=CENTER_ALIGN)
 
     # Adjust column widths
     ws.column_dimensions['A'].width = 40
@@ -916,6 +923,23 @@ def process_file():
     # Calculate where to print the exchange rate
     # last_data_row_of_present_ppl = data_start_row_for_present_ppl + total_row_index + 5
    
+   
+    # Step 1: Identify all columns related to "Pure Wt"
+    pure_wt_columns = [col for col in final_output.columns if 'pure wt' in col.lower()]
+
+    # Step 2: Check if we found any pure weight columns
+    if pure_wt_columns:
+        # Step 3: Sum all pure weight columns row-wise
+        final_output["Pure Wt (gms) 0.995 Gold"] = final_output[pure_wt_columns].sum(axis=1)
+
+        # Step 4: Find the correct row in the Excel sheet to place the data
+        for row_idx, value in enumerate(final_output["Pure Wt (gms) 0.995 Gold"], start=start_row):
+            set_cell(ws, f'E{row_idx}', value, alignment=CENTER_ALIGN)
+
+        print("Pure weight summation added successfully in column E.")
+    else:
+        print("No 'Pure Wt' columns found in the dataset.")
+
     try:
         # Step 1: Get Challan No, RM list, and Invoice No Date
         challan_no_value = request.form.get('challan_no', '').strip()
@@ -970,21 +994,29 @@ def process_file():
             except ValueError as e:
                 return jsonify({'error': f"Invalid data in row {i+1}: {e}"})
 
-        data_to_insert = [
-            (
+        data_to_insert = []
+
+        # Process each row for reconciliation
+        for i, row in enumerate(generated_table):
+            rm_name = rm_list_for_present_ppl[i]
+
+            # Replace "Met Wt Gms" with "Pure Wt" if RM is "0.995 Gold"
+            if rm_name == "0.995 Gold":
+                met_wt_gms = row["Inv Pure Wt"]  # Use "Pure Wt" instead
+            else:
+                met_wt_gms = row["Inv Rm Wt"]  # Use "Met Wt"
+
+            data_to_insert.append((
                 challan_id,
                 batch_id,
-                rm_list_for_present_ppl[i],
-                row["Inv Rm Wt"],
-                row["Inv Value"],
-                row["Inv Pure Wt"]
-            )
-            for i, row in enumerate(generated_table)
-        ]
+                rm_name,
+                met_wt_gms,
+                row["Inv Value"]  # Exclude "Inv Pure Wt" from insertion
+            ))
 
         insert_reconciliation_query = """
-            INSERT INTO reconciliation (challan_id, batch_id, rm, met_wt_gms, value_usd, inv_pure_wt)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO reconciliation (challan_id, batch_id, rm, met_wt_gms, value_usd)
+            VALUES (%s, %s, %s, %s, %s)
         """
         cur.executemany(insert_reconciliation_query, data_to_insert)
         mysql.connection.commit()
@@ -999,14 +1031,14 @@ def process_file():
         batches = cur.fetchall()
 
         current_row = data_start_row_for_present_ppl + 5
-        headers = ["RM", "Met Wt Gms", "Value USD", "Inv Pure Wt"]
+        headers = ["RM", "Met Wt Gms", "Value USD"]
 
         for batch in batches:
             batch_id, batch_time, invoice_no_date = batch
 
             # Fetch data for the current batch
             fetch_records_query = """
-                SELECT rm, met_wt_gms, value_usd, inv_pure_wt
+                SELECT rm, met_wt_gms, value_usd
                 FROM reconciliation WHERE batch_id = %s
             """
             cur.execute(fetch_records_query, (batch_id,))
@@ -1140,9 +1172,15 @@ def process_file():
 
         # Step 4: Add Balance Table to Excel
         current_row += 2  # Add spacing after the last batch table
-        ws.cell(row=current_row, column=1, value="Balance Loose Metal")
-        ws.cell(row=current_row, column=1).font = Font(bold=True)
-        ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=3)
+        if return_switch == "on":
+        
+            ws.cell(row=current_row, column=1, value="Balance Loose Metal")
+            ws.cell(row=current_row, column=1).font = Font(bold=True)
+            ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=3)
+        else: 
+            ws.cell(row=current_row, column=1, value="Balance Loose Metal Return")
+            ws.cell(row=current_row, column=1).font = Font(bold=True)
+            ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=3)
         current_row += 2
 
         # Write Balance Table Headers
@@ -1151,29 +1189,38 @@ def process_file():
             ws.cell(row=current_row, column=col_num, value=header)
         current_row += 1
 
-       # Write Balance Table Data
+        # Write Balance Table Data (Ensuring Positive Values)
         for row in balance_table:
             ws.cell(row=current_row, column=1, value=row['rm'])
-            ws.cell(row=current_row, column=2, value=row['balance_met_wt_gms'])
-            ws.cell(row=current_row, column=3, value=row['balance_value_usd'])
+            ws.cell(row=current_row, column=2, value=abs(row['balance_met_wt_gms']))  # Ensure non-negative
+            ws.cell(row=current_row, column=3, value=abs(row['balance_value_usd']))   # Ensure non-negative
             current_row += 1
+
 
         cur.close()
 
         if return_switch == "on":
             # Ensure 'i' is initialized (if it's a row index for writing to Excel)
-            i = header_row_for_return  # Replace `starting_row` with the actual starting row index for your Excel sheet
+            i = header_row_for_return  # Starting row for writing data
 
-            for balance_row in balance_table[:-1]:
+            # Identify the second last column for "Amount US$"
+            second_last_col_index = ws.max_column  # The current last column becomes second last
+            second_last_col_letter = ws.cell(row=start_row, column=second_last_col_index).column_letter
+
+            for balance_row in balance_table[:-2]:  # Exclude the last row
                 # Ensure the balance_row has the required keys before processing
-                if 'balance_met_wt_gms' in balance_row and 'rm' in balance_row:
-                    print(f"Writing balance_met_wt_gms: {balance_row['balance_met_wt_gms']} for RM: {balance_row['rm']}")
-                    ws[f'D{i}'] = balance_row['balance_met_wt_gms']  # Write balance_met_wt_gms to column D
+                if 'balance_met_wt_gms' in balance_row and 'balance_value_usd' in balance_row and 'rm' in balance_row:
+                    print(f"Writing balance_met_wt_gms: {balance_row['balance_met_wt_gms']} and balance_value_usd: {balance_row['balance_value_usd']} for RM: {balance_row['rm']}")
+
+                    # Write balance_met_wt_gms to column D
+                    ws[f'D{i}'] = balance_row['balance_met_wt_gms']
+
+                    # Write balance_value_usd to the second last column (no header)
+                    ws[f'{second_last_col_letter}{i}'] = balance_row['balance_value_usd']
+
                     i += 1  # Move to the next row
         else:
             print(f"Skipping row due to missing keys: {balance_row}")
-
-
 
         table = current_row + 5
         exchange_rate_row_number = table + 15 # Add a 5-line gap (3 for data, 2 for space)
@@ -1222,40 +1269,35 @@ def process_file():
         for col_idx, value in enumerate(last_row_of_total_values, start=1):  # start=1 for column A
             ws.cell(row=target_row, column=col_idx, value=value)
             
-        from openpyxl.utils import get_column_letter
+      
         if isinstance(last_row_of_total, pd.Series):
-            
             # Calculate the last column index
-            last_column_index = len(last_row_of_total_values)  # Don't subtract 1, just use len() to get the total number of columns
+            last_column_index = len(last_row_of_total_values) - 1  # Subtract 1 to shift the columns to the left
+            last_column_letter = get_column_letter(last_column_index)  # Get the correct Excel column letter
+            last_column_letter_for_metal = get_column_letter(last_column_index)  # Same adjustment for the metal column
 
-            # Use get_column_letter to correctly convert the index to Excel column letters
-            last_column_letter = get_column_letter(last_column_index)  # This will handle 'A', 'Z', 'AA', 'BZ', etc.
-            last_column_letter_for_metal = get_column_letter(last_column_index)  # Use same logic for the metal column
-
-
-            # Now, setting the cell values correctly
+            # Set the values for "Less: Metal Cost US$" and "Net Realization US$" in the shifted columns
             set_cell(ws, f'{last_column_letter}{target_row_calculation}', "Less: Metal Cost US$", font=BOLD_FONT, alignment=LEFT_ALIGN)
             set_cell(ws, f'{last_column_letter}{target_row_calculation_for_net_realization}', "Net Realization US$", font=BOLD_FONT, alignment=LEFT_ALIGN)
 
-    # Further code continues...
+        # Continue processing metal_amt_sum and net_realization_value
         final_output.columns = final_output.columns.str.strip().str.lower()  # Make column names lowercase and strip spaces
 
         # Step 2: Check if 'metal amt.' column exists (case insensitive)
         metal_amt_column_name = [col for col in final_output.columns if 'metal amt' in col.lower()]
         amount_col = [col for col in final_output.columns if 'amount us$' in col.lower()]
-        
+
         if metal_amt_column_name:
             # Step 3: Sum the 'Metal Amt.' column
             metal_amt_sum = final_output[metal_amt_column_name[0]].sum()  # Use the first matching column
             set_cell(ws, f'{last_column_letter_for_metal}{target_row_calculation}', metal_amt_sum, font=BOLD_FONT, alignment=LEFT_ALIGN)
-        
 
         if amount_col:
-            # Step 3: Sum the 'Metal Amt.' column
+            # Step 3: Sum the 'Amount US$' column
             amt_col_sum = final_output[amount_col[0]].sum()  # Use the first matching column
             net_realization_value = amt_col_sum - metal_amt_sum
             set_cell(ws, f'{last_column_letter_for_metal}{target_row_calculation_for_net_realization}', net_realization_value, font=BOLD_FONT, alignment=LEFT_ALIGN)
-        
+
         if "Inv Rm Qty" in df.columns:
             ws[f'B{table + 1}'] = diamond_qty 
             ws[f'B{table + 1}'].font = BOLD_FONT
@@ -1407,11 +1449,7 @@ def process_file():
      
      
      
-def handle_return_switch(ws, rm_list, last_row, return_switch):
-   
-  
 
-    return content_end_row
 
    
    
