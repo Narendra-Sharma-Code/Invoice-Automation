@@ -4,8 +4,8 @@ CATEGORY_DICT = {
     "C": "Color Stone",
     "M": "Metal",
     "D": "Diamond",
-    "NTL": "NTL",
-    "STL": "STL",
+    "NTL": "Nithanol",
+    "STL": "Steel",
     "P": "Platinum",
     "TTM": "Titanium",
 }
@@ -40,7 +40,7 @@ DESIGN_CATEGORY = {
     "CT" : "Component",
     "BND": "Band",
     "CHM": "Chams",
-    "NSP": "NoSpin"
+    "NSP": "NoSpin",
     
 }
 
