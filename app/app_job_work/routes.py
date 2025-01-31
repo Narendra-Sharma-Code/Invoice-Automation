@@ -1156,8 +1156,6 @@ def process_file():
                 'balance_value_usd': float(challan_values['value_usd']) - float(batch_values['total_value_usd']),
             }
             balance_table.append(balance_row)
-
-
             # Accumulate totals for the columns
             total_met_wt_gms += balance_row['balance_met_wt_gms']
             total_value_usd += balance_row['balance_value_usd']

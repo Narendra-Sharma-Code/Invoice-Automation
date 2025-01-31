@@ -1,0 +1,13 @@
+RDS end point:
+database-1.c32e4mqgeqs3.eu-north-1.rds.amazonaws.com
+
+commands of instance:
+sudo apt update
+cd Invoice_Automation
+source venv/bin/activate
+
+git status
+git checkout master
+git pull 
+
+sudo nano /etc/systemd/system/gunicorn.service
