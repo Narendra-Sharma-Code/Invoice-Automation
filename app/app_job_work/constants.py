@@ -40,7 +40,7 @@ DESIGN_CATEGORY = {
     "CT" : "Component",
     "BND": "Band",
     "CHM": "Chams",
-    "NSP": "Nose-pin"
+    "NSP": "Nose-pin",
     
 }
 
