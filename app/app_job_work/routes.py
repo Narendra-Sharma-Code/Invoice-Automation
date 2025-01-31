@@ -1455,7 +1455,7 @@ def process_file():
 def get_metal_mapping(output_header, row, ctg, metal_kt):
     return_dict = {}
     common_column = "Inv Rm Wt"
-    metals = ['G','S', 'M', 'NTL', 'STL']
+    metals = ['G','S', 'M', 'NTL', 'STL', 'P','TTM','STL','NTL']
     metal_column = "Inv Pure Wt"
     stones = ['D', 'C']
     stone_column = "Inv Value"
