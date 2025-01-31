@@ -10,7 +10,7 @@ from . import constants
 from num2words import num2words
 from app.extensions import mysql  # Import mysql from extensions
 import json
-from openpyxl.utils import get_column_letter
+from openpyxl.utils import get_column_letter,column_index_from_string
 
 # app_job_work = Flask(__name__)
 app_job_work = Blueprint('app_job_work', __name__, template_folder='templates',static_folder='app/static')
@@ -24,6 +24,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 BOLD_FONT = Font(bold=True, size=12)
 CENTER_ALIGN = Alignment(horizontal='center', vertical='center', wrap_text=True)
 LEFT_ALIGN = Alignment(horizontal='left', vertical='top', wrap_text=True)
+RIGHT_ALIGN = Alignment(horizontal="right",vertical='top', wrap_text=True)
 THIN_BORDER = Border(left=Side(style='thin'), right=Side(style='thin'),
                      top=Side(style='thin'), bottom=Side(style='thin'))
 DARK_BOTTOM_BORDER = Border(bottom=Side(style='medium'))
@@ -610,38 +611,6 @@ def process_file():
     value_usd_list = request.form.getlist('value_usd[]')
     rate_per_grams_list = request.form.getlist('rate[]')
    
-    # print(request.form)  # Print all form data
-    # return_switch = request.form.get('return_switch', 'off')
-    # print(f"Return Switch Value: {return_switch}")
-
-    
-#     header_row_for_return = last_row + 2
-#     content_row_for_return = header_row_for_return + 1
-
-    
-#  # Get the return_switch value, default to 'off'
-#     return_switch = request.form.get('return_switch', 'off')
-#     print(f"Return Switch Value: {return_switch}")  # Debug: Log received value
-
-#     if return_switch == "on":
-#         print("Switch is ON. Executing logic...")
-
-#         # Add header text and make it bold
-#         ws[f'A{header_row_for_return}'] = "Balance Loose Metal Return"
-#         bold_font = Font(bold=True)
-#         ws[f'A{header_row_for_return}'].font = bold_font
-
-#         # Insert values from rm_list into column A
-#         for i, value_for_return in enumerate(rm_list, start=content_row_for_return):
-#             ws[f'A{i}'] = value_for_return
-            
-#         # Dynamically adjust the next row based on inserted content
-#         content_end_row = content_row_for_return + len(rm_list)
-
-#     else:
-#         print("Switch is OFF or not set.")  # Debug: Log when switch is off
-#         # If switch is off, no data is added; use content_row_for_return directly
-#         content_end_row = content_row_for_return
 
     return_switch = request.form.get('return_switch', 'off')
 
@@ -924,21 +893,24 @@ def process_file():
     # last_data_row_of_present_ppl = data_start_row_for_present_ppl + total_row_index + 5
    
    
-    # Step 1: Identify all columns related to "Pure Wt"
+    # Step 1: Identify all "Pure Wt" columns
     pure_wt_columns = [col for col in final_output.columns if 'pure wt' in col.lower()]
 
-    # Step 2: Check if we found any pure weight columns
-    if pure_wt_columns:
-        # Step 3: Sum all pure weight columns row-wise
-        final_output["Pure Wt (gms) 0.995 Gold"] = final_output[pure_wt_columns].sum(axis=1)
+    # Step 2: Exclude "Pure Wt Silver" columns
+    pure_wt_gold_columns = [col for col in pure_wt_columns if 'silver' not in col.lower()]
 
-        # Step 4: Find the correct row in the Excel sheet to place the data
+    # Step 3: Check if we found any relevant "Pure Wt" columns
+    if pure_wt_gold_columns:
+        # Step 4: Sum all non-silver "Pure Wt" columns row-wise for 0.995 Gold
+        final_output["Pure Wt (gms) 0.995 Gold"] = final_output[pure_wt_gold_columns].sum(axis=1)
+
+        # Step 5: Place the summed values in the correct Excel row (Column E)
         for row_idx, value in enumerate(final_output["Pure Wt (gms) 0.995 Gold"], start=start_row):
             set_cell(ws, f'E{row_idx}', value, alignment=CENTER_ALIGN)
 
-        print("Pure weight summation added successfully in column E.")
+        print("Pure weight summation for 0.995 Gold added successfully in column E.")
     else:
-        print("No 'Pure Wt' columns found in the dataset.")
+        print("No 'Pure Wt' columns found for 0.995 Gold.")
 
     try:
         # Step 1: Get Challan No, RM list, and Invoice No Date
@@ -1172,11 +1144,11 @@ def process_file():
         current_row += 2  # Add spacing after the last batch table
         if return_switch == "on":
         
-            ws.cell(row=current_row, column=1, value="Balance Loose Metal")
+            ws.cell(row=current_row, column=1, value="Balance Loose Metal Return")
             ws.cell(row=current_row, column=1).font = Font(bold=True)
             ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=3)
         else: 
-            ws.cell(row=current_row, column=1, value="Balance Loose Metal Return")
+            ws.cell(row=current_row, column=1, value="Balance Loose Metal ")
             ws.cell(row=current_row, column=1).font = Font(bold=True)
             ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=3)
         current_row += 2
@@ -1198,27 +1170,81 @@ def process_file():
         cur.close()
 
         if return_switch == "on":
-            # Ensure 'i' is initialized (if it's a row index for writing to Excel)
-            i = header_row_for_return  # Starting row for writing data
+            # Ensure 'i' is initialized correctly
+            i = header_row_for_return + 1  # Starting row for writing data
 
-            # Identify the second last column for "Amount US$"
-            second_last_col_index = ws.max_column  # The current last column becomes second last
-            second_last_col_letter = ws.cell(row=start_row, column=second_last_col_index).column_letter
+            # Correctly identify the second last column index
+            second_last_col_index = ws.max_column  # Now truly the  last column
+            second_last_col_letter = get_column_letter(second_last_col_index)  # Using utility function
 
-            for balance_row in balance_table[:-2]:  # Exclude the last row
-                # Ensure the balance_row has the required keys before processing
-                if 'balance_met_wt_gms' in balance_row and 'balance_value_usd' in balance_row and 'rm' in balance_row:
+            # Loop through all rows except the last (total) row
+            for balance_row in balance_table[:-1]:
+                # Check for required keys to avoid KeyError
+                if all(key in balance_row for key in ['balance_met_wt_gms', 'balance_value_usd', 'rm']):
                     print(f"Writing balance_met_wt_gms: {balance_row['balance_met_wt_gms']} and balance_value_usd: {balance_row['balance_value_usd']} for RM: {balance_row['rm']}")
 
-                    # Write balance_met_wt_gms to column D
-                    ws[f'D{i}'] = balance_row['balance_met_wt_gms']
+                    # Write to column D (4th column) with absolute value
+                    ws[f'D{i}'] = abs(balance_row['balance_met_wt_gms'])  # Apply abs()
 
-                    # Write balance_value_usd to the second last column (no header)
-                    ws[f'{second_last_col_letter}{i}'] = balance_row['balance_value_usd']
+                    # Write to the second last column with absolute value
+                    ws[f'{second_last_col_letter}{i}'] = abs(balance_row['balance_value_usd'])  # Apply abs()
 
-                    i += 1  # Move to the next row
+                    i += 1  # Move to next row
+                else:
+                    print(f"Skipping row due to missing keys: {balance_row}")
         else:
-            print(f"Skipping row due to missing keys: {balance_row}")
+            # Handle the case when return_switch is not "on" if necessary
+            pass  # Or add appropriate logic
+        
+        # if return_switch == "on":
+        #     print("Switch is ON. Mapping values to Net Wt columns...")
+
+        #     current_row_for_return = header_row_for_return  # Ensure correct starting row
+
+        #     # Create a mapping of rm values to their respective headers
+        #     rm_to_header_map = {}
+        #     for header in all_headers:
+        #         if "Net Wt" in header:  # Ensure only Net Wt headers are considered
+        #             if "Gold" in header:
+        #                 match = re.search(r'(\d+)(E?KT)', header, re.IGNORECASE)
+        #                 if match:
+        #                     number, kt_type = match.groups()
+        #                     rm_to_header_map[f"{number}{kt_type} Gold"] = header
+        #             elif "Silver" in header:
+        #                 rm_to_header_map["Silver"] = header
+        #             elif "Platinum" in header:
+        #                 rm_to_header_map["Platinum"] = header
+
+        #         # Iterate through rm_list_for_present_ppl and map values
+        #         for rm in rm_list_for_present_ppl:
+        #             balance_row = next((row for row in balance_table if row['rm'] == rm), None)
+
+        #             if balance_row and balance_row['balance_met_wt_gms'] is not None:
+        #                 balance_met_wt_gms = abs(balance_row['balance_met_wt_gms'])  # Ensure positive values
+
+        #                 # Find the matching header
+        #                 matched_header = next((rm_to_header_map[key] for key in rm_to_header_map if key in rm), None)
+
+        #                 if matched_header:
+        #                     # Find the column index
+        #                     if matched_header in all_headers:
+        #                         header_index = all_headers.index(matched_header) + 1  # Excel columns start at 1
+        #                         column_letter = get_column_letter(header_index)
+
+        #                         # Write the value
+        #                         ws[f'{column_letter}{current_row_for_return}'] = balance_met_wt_gms
+        #                         print(f"Placed {balance_met_wt_gms} under '{matched_header}' at row {current_row_for_return}")
+
+        #                         # Increment row for the next value
+        #                         current_row_for_return += 1
+        #                     else:
+        #                         print(f"Error: Column for header '{matched_header}' not found in all_headers.")
+        #                 else:
+        #                     print(f"No matching Net Wt header found for RM: {rm}")
+        # else:
+        #     print(f"No valid balance_met_wt_gms found for RM: {rm}")
+
+        
 
         table = current_row + 5
         exchange_rate_row_number = table + 15 # Add a 5-line gap (3 for data, 2 for space)
@@ -1288,13 +1314,23 @@ def process_file():
         if metal_amt_column_name:
             # Step 3: Sum the 'Metal Amt.' column
             metal_amt_sum = final_output[metal_amt_column_name[0]].sum()  # Use the first matching column
-            set_cell(ws, f'{last_column_letter_for_metal}{target_row_calculation}', metal_amt_sum, font=BOLD_FONT, alignment=LEFT_ALIGN)
+
+            # Shift one column to the right
+            new_column_index = column_index_from_string(last_column_letter_for_metal) + 1
+            new_column_letter = get_column_letter(new_column_index)
+
+            set_cell(ws, f'{new_column_letter}{target_row_calculation}', metal_amt_sum, font=BOLD_FONT, alignment=RIGHT_ALIGN)
 
         if amount_col:
             # Step 3: Sum the 'Amount US$' column
             amt_col_sum = final_output[amount_col[0]].sum()  # Use the first matching column
             net_realization_value = amt_col_sum - metal_amt_sum
-            set_cell(ws, f'{last_column_letter_for_metal}{target_row_calculation_for_net_realization}', net_realization_value, font=BOLD_FONT, alignment=LEFT_ALIGN)
+
+            # Shift one column to the right
+            new_column_index = column_index_from_string(last_column_letter_for_metal) + 1
+            new_column_letter = get_column_letter(new_column_index)
+
+            set_cell(ws, f'{new_column_letter}{target_row_calculation_for_net_realization}', net_realization_value, font=BOLD_FONT, alignment=RIGHT_ALIGN)
 
         if "Inv Rm Qty" in df.columns:
             ws[f'B{table + 1}'] = diamond_qty 
@@ -1489,7 +1525,7 @@ def get_product_name(ctg):
                 continue
             product_name = product_name + ' ' + (constants.STATEMENT_DICT.get(j, ''))
 
-    return product_name.strip() + ' Jwellery'
+    return product_name.strip() + ' Jewellery'
         
 
 def map_headers_to_data(headers, data):
