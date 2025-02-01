@@ -572,20 +572,9 @@ def process_file():
     else:
         print("Error: 'Metal Amt.' column not found.")
     
-    
-    numeric_columns = final_output.select_dtypes(include=['number']).columns
 
-    # Calculate the sum for each numeric column
-    totals_row = {col: final_output[col].sum() for col in numeric_columns}
-
-    # Add a label for the totals row (e.g., in the first column)
-    totals_row.update({col: None for col in final_output.columns if col not in numeric_columns})
-
-    # Append the totals row to the DataFrame
-    final_output_total = pd.concat([final_output, pd.DataFrame([totals_row])], ignore_index=True)    
     from openpyxl.utils.dataframe import dataframe_to_rows
 
-    last_row_of_total = final_output_total.iloc[-1]
     # If mapped_data is a list of dictionaries or rows
 
     from openpyxl.styles import Font
@@ -902,16 +891,41 @@ def process_file():
     # Step 3: Check if we found any relevant "Pure Wt" columns
     if pure_wt_gold_columns:
         # Step 4: Sum all non-silver "Pure Wt" columns row-wise for 0.995 Gold
-        final_output["Pure Wt (gms) 0.995 Gold"] = final_output[pure_wt_gold_columns].sum(axis=1)
+        final_output["pure wt (gms) 0.995 gold"] = final_output[pure_wt_gold_columns].sum(axis=1)
 
+       # Convert the column to numeric, forcing errors to NaN
+        final_output["pure wt (gms) 0.995 gold"] = pd.to_numeric(final_output["pure wt (gms) 0.995 gold"], errors='coerce')
+
+        # Calculate the sum again
+        column_e_sum = final_output["pure wt (gms) 0.995 gold"].sum()
         # Step 5: Place the summed values in the correct Excel row (Column E)
-        for row_idx, value in enumerate(final_output["Pure Wt (gms) 0.995 Gold"], start=start_row):
+        for row_idx, value in enumerate(final_output["pure wt (gms) 0.995 gold"], start=start_row):
             set_cell(ws, f'E{row_idx}', value, alignment=CENTER_ALIGN)
 
-        print("Pure weight summation for 0.995 Gold added successfully in column E.")
+        # print(f"Pure weight summation for 0.995 Gold added successfully in column E. Total sum: {column_e_sum}")
+        # print(final_output.columns)
+        # print(final_output["pure wt (gms) 0.995 gold"].head())
+
     else:
         print("No 'Pure Wt' columns found for 0.995 Gold.")
 
+       
+    numeric_columns = final_output.select_dtypes(include=['number']).columns
+
+    # Calculate the sum for each numeric column
+    totals_row = {col: final_output[col].sum() for col in numeric_columns}
+
+    # Add the specific sum for "Pure Wt (gms) 0.995 Gold" into column E
+    totals_row["pure wt (gms) 0.995 gold"] = column_e_sum
+  
+    # Add a label for the totals row (e.g., in the first column)
+    totals_row.update({col: None for col in final_output.columns if col not in numeric_columns})
+
+
+    # Append the totals row to the DataFrame
+    final_output_total = pd.concat([final_output, pd.DataFrame([totals_row])], ignore_index=True)    
+    last_row_of_total = final_output_total.iloc[-1]
+   
     try:
         # Step 1: Get Challan No, RM list, and Invoice No Date
         challan_no_value = request.form.get('challan_no', '').strip()
