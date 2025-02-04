@@ -97,6 +97,7 @@ def process_file():
                 silver_present = True
             elif re.search(r'\b(platinum|plt)\b', item, re.IGNORECASE):  # For "Platinum" or "plt"
                 platinum_present = True
+                
             else:
             # Capture any other unique Metal KT values for inclusion as headers
                 other_headers.append(item)
@@ -443,7 +444,10 @@ def process_file():
     ws.column_dimensions['D'].width = 20
     ws.column_dimensions['E'].width = 15
     ws.column_dimensions['F'].width = 15
+
+    rm_list = request.form.getlist('rm[]')
     
+
     # Adjust widths for dynamically added columns
     for col_index in range(5, ws.max_column + 1):  # From the first added column to the last
         col_letter = ws.cell(row=start_row, column=col_index).column_letter
@@ -464,7 +468,7 @@ def process_file():
     required_columns = [
         'INR LABOUR', 'Inv Rm Wt', 'Design', 'Ctg', 'Metal KT', 
         'Gross Wt', 'DsgCtg', 'Karatage', 'Inv Pure Wt', 
-        'Inv Rate', 'Inv Value', 'Labour', 'Qty'
+        'Inv Rate', 'Inv Value', 'Labour', 'Qty','Rm Code'
     ]
     
     
@@ -558,6 +562,54 @@ def process_file():
     # Create final DataFrame from the mapped data
     final_output = pd.DataFrame(mapped_data)
     # print(final_output.to_string())
+   
+    # --- Existing code for creating your DataFrame ---
+    mapped_data = map_headers_to_data(output_header, final_list)
+    final_output = pd.DataFrame(mapped_data)
+
+    # --- Debug: Print the rm_list and current DataFrame columns ---
+    print("rm_list:", rm_list)
+    print("DataFrame columns:", final_output.columns.tolist())
+
+    # --- Normalize the rm_list values: strip spaces and lower-case ---
+    normalized_rm_list = [item.strip().lower() for item in rm_list]
+
+    # --- Check if "999pt" (normalized) is in the normalized_rm_list ---
+    if "999pt" in normalized_rm_list:
+        print("'999pt' found in rm_list (after normalization).")
+        
+        # --- Normalize the DataFrame column names for the check ---
+        # Create a dictionary mapping normalized column names to the actual column names
+        col_map = {col.strip().lower(): col for col in final_output.columns}
+        
+        # Check if a normalized column "950pt" exists
+        if "950pt" in col_map:
+            actual_col_950 = col_map["950pt"]
+            print(f"Found '950pt' column as '{actual_col_950}' in final_output.")
+            try:
+                # Ensure the values in the "950pt" column are numeric.
+                final_output[actual_col_950] = pd.to_numeric(final_output[actual_col_950], errors="coerce")
+                
+                # Calculate the new column values:
+                # (value in "950pt") * 950 / 999
+                pure_wt_999pt = final_output[actual_col_950] * 950 / 999
+
+                # Find the index of the "950pt" column using the actual column name.
+                index_950pt = final_output.columns.get_loc(actual_col_950)
+                # Insert the new column "pt 0.999 pure wt" immediately after the "950pt" column.
+                final_output.insert(index_950pt + 1, "pt 0.999 pure wt", pure_wt_999pt)
+
+                print("Inserted 'pt 0.999 pure wt' column successfully.")
+            except Exception as e:
+                print("Error during calculation or column insertion:", e)
+        else:
+            print("Error: '950pt' column not found in final_output after normalization.")
+    else:
+        print("'999pt' is not present in rm_list (after normalization); skipping new column insertion.")
+
+    # --- Debug: Print final columns to verify if the new column was added ---
+    print("Final DataFrame columns:", final_output.columns.tolist())
+
 
     # Step 1: Clean the column names (strip spaces and convert to lowercase for consistency)
     final_output.columns = final_output.columns.str.strip().str.lower()  # Make column names lowercase and strip spaces
@@ -568,7 +620,7 @@ def process_file():
     if metal_amt_column_name:
         # Step 3: Sum the 'Metal Amt.' column
         metal_amt_sum = final_output[metal_amt_column_name[0]].sum()  # Use the first matching column
-        print(f"Sum of '{metal_amt_column_name[0]}':", metal_amt_sum)
+        # print(f"Sum of '{metal_amt_column_name[0]}':", metal_amt_sum)
     else:
         print("Error: 'Metal Amt.' column not found.")
     
@@ -594,7 +646,6 @@ def process_file():
   
     # Get multiple RM, QTY PCS, Met. Wt.Gms, and Value US$ from the form
     
-    rm_list = request.form.getlist('rm[]')
     qty_pcs_list = request.form.getlist('qty_pcs[]')  
     met_wt_gms_list = request.form.getlist('met_wt_gms[]')
     value_usd_list = request.form.getlist('value_usd[]')
@@ -603,16 +654,15 @@ def process_file():
 
     return_switch = request.form.get('return_switch', 'off')
 
-    rm_list = request.form.getlist('rm[]') 
     # Calculate starting rows
     header_row_for_return = last_row + 2
     content_row_for_return = header_row_for_return + 1
 
     
-    print(f"Return Switch Value: {return_switch}")  # Debug: Log received value
+    # print(f"Return Switch Value: {return_switch}")  # Debug: Log received value
 
     if return_switch == "on":
-        print("Switch is ON. Executing logic...")
+        # print("Switch is ON. Executing logic...")
 
         # Add header text and make it bold
         ws[f'A{header_row_for_return}'] = "Balance Loose Metal Return"
@@ -705,7 +755,7 @@ def process_file():
     generated_table_data.append(total_row_for_chalan)
 
     # Debug: Print generated table data
-    print("Generated Table Data:", generated_table_data)
+    # print("Generated Table Data:", generated_table_data)
 
     # Convert table data to JSON
     table_data_json = json.dumps(generated_table_data)
@@ -731,7 +781,7 @@ def process_file():
         stored_table_data = json.loads(result[0])
 
         # Debug: Print stored table data
-        print("Stored Table Data:", stored_table_data)
+        # print("Stored Table Data:", stored_table_data)
 
         # Use the stored data to generate the table in Excel
         for i, row in enumerate(stored_table_data):
@@ -833,8 +883,8 @@ def process_file():
     )
     
     # Debugging output
-    print("Final Group for Reconciliation:")
-    print(group_for_reconciliation)
+    # print("Final Group for Reconciliation:")
+    # print(group_for_reconciliation)
         
     # # Add "Total" row
     # total_row_index = len(rm_list_for_present_ppl)  # Position for "Total" row 
@@ -876,7 +926,7 @@ def process_file():
     # Print the value of the request_id . in the next column (F28)
     ws['F28'] = request_id  # Assign the Challan No. value
     ws['F28'].alignment = Alignment(horizontal='left', vertical='top', wrap_text=False)  # Align left and prevent wrap
-
+    
 
     # Calculate where to print the exchange rate
     # last_data_row_of_present_ppl = data_start_row_for_present_ppl + total_row_index + 5
@@ -1263,6 +1313,41 @@ def process_file():
         table = current_row + 5
         exchange_rate_row_number = table + 15 # Add a 5-line gap (3 for data, 2 for space)
 
+        # # --- Step 1: Clean Column Names ---
+        # df.columns = df.columns.astype(str).str.strip()
+        # df.columns = df.columns.str.replace(r'\s+', ' ', regex=True)
+        # df.columns = df.columns.str.replace(r'[^A-Za-z0-9 ]+', '', regex=True)
+
+        # # --- Step 2: Ensure Required Columns Exist ---
+        # required_columns = ["Ctg", "Rm Code"]
+        # for col in required_columns:
+        #     if col not in df.columns:
+        #         df[col] = ""
+
+        # # --- Step 3: Force Each Value to a String Explicitly ---
+        # # Using .apply(lambda x: ...) is sometimes more robust than .astype(str)
+        # df["Ctg"] = df["Ctg"].apply(lambda x: str(x) if pd.notnull(x) else "")
+        # df["Rm Code"] = df["Rm Code"].apply(lambda x: str(x) if pd.notnull(x) else "")
+
+        # # --- Debug: Check the Data Types of Each Element ---
+        # print("Unique types in 'Ctg':", df["Ctg"].apply(type).unique())
+        # print("Unique types in 'Rm Code':", df["Rm Code"].apply(type).unique())
+
+        # # --- Step 4: Filter Rows Where "Ctg" Equals "C" ---
+        # # Now that all values should be strings, .str.upper() should work fine.
+        # filtered_df = df[df["Ctg"].str.upper() == "C"].copy()
+
+        # # --- Step 5: Map "Rm Code" Values Using the Dictionary ---
+        # # Ensure the dictionary keys are compared as strings.
+        # mapped_values = filtered_df["Rm Code"].apply(lambda x: constants.COLOUR_STONE_CODE.get(x, None))
+        
+        # # Remove None values and get unique values
+        # mapped_values = mapped_values.dropna().unique()
+
+        # # --- Step 6: Join All Mapped Values With a Slash ---
+        # joined_string = "/".join(mapped_values)
+
+        
         diamond_stone_table = df.loc[df['Ctg'].isin(['C','D'])].groupby(["Ctg"], dropna=False).agg({
             "Inv Rm Wt": "sum",
             "Inv Value": "sum",
@@ -1279,7 +1364,8 @@ def process_file():
                 CS_wt = round(row['Inv Rm Wt'],3)
                 CS_value = round(row['Inv Value'],2)
                 CS_qty = (row['Inv Rm Qty'])
-    
+
+
     # Adding "Type", "PCS", "Total CTW", "Net Payable by You"
         set_cell(ws, f'B{table}', "PCS", font=BOLD_FONT, alignment=LEFT_ALIGN)
         set_cell(ws, f'C{table}', "Total CTW", font=BOLD_FONT, alignment=LEFT_ALIGN)
@@ -1288,13 +1374,13 @@ def process_file():
 
         # Adding data row (e.g., "Diamond")
         set_cell(ws, f'A{table + 1}', "Diamond", font=BOLD_FONT, alignment=LEFT_ALIGN)
-        set_cell(ws, f'A{table + 2}', "Precious/Semi Precious Color Stone", font=BOLD_FONT, alignment=LEFT_ALIGN)
+        # set_cell(ws, f'A{table + 2}', joined_string, font=BOLD_FONT, alignment=LEFT_ALIGN)  # Dynamically set mapped value
 
         set_cell(ws, f'A{table + 5}', "Type", font=BOLD_FONT, alignment=LEFT_ALIGN)
         set_cell(ws, f'B{table + 5}', "Value", font=BOLD_FONT, alignment=LEFT_ALIGN)
 
         set_cell(ws, f'A{table + 6}', "Diamond", font=BOLD_FONT, alignment=LEFT_ALIGN)
-        set_cell(ws, f'A{table + 7}', "Precious/Semi Precious Color Stone", font=BOLD_FONT, alignment=LEFT_ALIGN)
+        # set_cell(ws, f'A{table + 7}', joined_string, font=BOLD_FONT, alignment=LEFT_ALIGN)  # Dynamically set mapped value
         set_cell(ws, f'A{table + 8}', "Labour", font=BOLD_FONT, alignment=LEFT_ALIGN)
         set_cell(ws, f'A{table + 9}', "Grand Total", font=BOLD_FONT, alignment=LEFT_ALIGN)
         set_cell(ws, f'A{table + 3}', "Grand Total", font=BOLD_FONT, alignment=LEFT_ALIGN)
