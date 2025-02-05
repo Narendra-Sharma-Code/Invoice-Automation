@@ -575,8 +575,8 @@ def process_file():
     normalized_rm_list = [item.strip().lower() for item in rm_list]
 
     # --- Check if "999pt" (normalized) is in the normalized_rm_list ---
-    if "999pt" in normalized_rm_list:
-        print("'999pt' found in rm_list (after normalization).")
+    if "0.999 pt" in normalized_rm_list:
+        print("'0.999 pt' found in rm_list (after normalization).")
         
         # --- Normalize the DataFrame column names for the check ---
         # Create a dictionary mapping normalized column names to the actual column names
@@ -1009,7 +1009,10 @@ def process_file():
             challan_id = cur.lastrowid
         else:
             challan_id = challan[0]
-
+            # Update the invoice_no_date for the existing challan
+            update_challan_query = "UPDATE challan SET invoice_no_date = %s WHERE challan_id = %s"
+            cur.execute(update_challan_query, (invoice_no_date, challan_id))
+            mysql.connection.commit()
 
         # Step 3: Create a new batch for the challan
         insert_batch_query = "INSERT INTO batch (challan_id, invoice_no_date) VALUES (%s, %s)"
@@ -1259,55 +1262,6 @@ def process_file():
         else:
             # Handle the case when return_switch is not "on" if necessary
             pass  # Or add appropriate logic
-        
-        # if return_switch == "on":
-        #     print("Switch is ON. Mapping values to Net Wt columns...")
-
-        #     current_row_for_return = header_row_for_return  # Ensure correct starting row
-
-        #     # Create a mapping of rm values to their respective headers
-        #     rm_to_header_map = {}
-        #     for header in all_headers:
-        #         if "Net Wt" in header:  # Ensure only Net Wt headers are considered
-        #             if "Gold" in header:
-        #                 match = re.search(r'(\d+)(E?KT)', header, re.IGNORECASE)
-        #                 if match:
-        #                     number, kt_type = match.groups()
-        #                     rm_to_header_map[f"{number}{kt_type} Gold"] = header
-        #             elif "Silver" in header:
-        #                 rm_to_header_map["Silver"] = header
-        #             elif "Platinum" in header:
-        #                 rm_to_header_map["Platinum"] = header
-
-        #         # Iterate through rm_list_for_present_ppl and map values
-        #         for rm in rm_list_for_present_ppl:
-        #             balance_row = next((row for row in balance_table if row['rm'] == rm), None)
-
-        #             if balance_row and balance_row['balance_met_wt_gms'] is not None:
-        #                 balance_met_wt_gms = abs(balance_row['balance_met_wt_gms'])  # Ensure positive values
-
-        #                 # Find the matching header
-        #                 matched_header = next((rm_to_header_map[key] for key in rm_to_header_map if key in rm), None)
-
-        #                 if matched_header:
-        #                     # Find the column index
-        #                     if matched_header in all_headers:
-        #                         header_index = all_headers.index(matched_header) + 1  # Excel columns start at 1
-        #                         column_letter = get_column_letter(header_index)
-
-        #                         # Write the value
-        #                         ws[f'{column_letter}{current_row_for_return}'] = balance_met_wt_gms
-        #                         print(f"Placed {balance_met_wt_gms} under '{matched_header}' at row {current_row_for_return}")
-
-        #                         # Increment row for the next value
-        #                         current_row_for_return += 1
-        #                     else:
-        #                         print(f"Error: Column for header '{matched_header}' not found in all_headers.")
-        #                 else:
-        #                     print(f"No matching Net Wt header found for RM: {rm}")
-        # else:
-        #     print(f"No valid balance_met_wt_gms found for RM: {rm}")
-
         
 
         table = current_row + 5
