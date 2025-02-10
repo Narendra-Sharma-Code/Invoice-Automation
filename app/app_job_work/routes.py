@@ -675,7 +675,6 @@ def process_file():
 
         # Dynamically adjust the next row based on inserted content
         content_end_row = content_row_for_return + len(rm_list)
-
     else:
         print("Switch is OFF or not set.")  # Debug: Log when switch is off
         # If switch is off, no data is added; use content_row_for_return directly
@@ -737,6 +736,7 @@ def process_file():
             "value_usd": value_usd,
             "rate_per_grams": rate_per_grams,
         }
+        
         generated_table_data.append(table_row)
 
         # Accumulate totals
@@ -1235,7 +1235,7 @@ def process_file():
 
 
         cur.close()
-
+        
         if return_switch == "on":
             # Ensure 'i' is initialized correctly
             i = header_row_for_return + 1  # Starting row for writing data
@@ -1267,39 +1267,39 @@ def process_file():
         table = current_row + 5
         exchange_rate_row_number = table + 15 # Add a 5-line gap (3 for data, 2 for space)
 
-        # # --- Step 1: Clean Column Names ---
-        # df.columns = df.columns.astype(str).str.strip()
-        # df.columns = df.columns.str.replace(r'\s+', ' ', regex=True)
-        # df.columns = df.columns.str.replace(r'[^A-Za-z0-9 ]+', '', regex=True)
+        # --- Step 1: Clean Column Names ---
+        df.columns = df.columns.astype(str).str.strip()
+        df.columns = df.columns.str.replace(r'\s+', ' ', regex=True)
+        df.columns = df.columns.str.replace(r'[^A-Za-z0-9 ]+', '', regex=True)
 
-        # # --- Step 2: Ensure Required Columns Exist ---
-        # required_columns = ["Ctg", "Rm Code"]
-        # for col in required_columns:
-        #     if col not in df.columns:
-        #         df[col] = ""
+        # --- Step 2: Ensure Required Columns Exist ---
+        required_columns = ["Ctg", "Rm Code"]
+        for col in required_columns:
+            if col not in df.columns:
+                df[col] = ""
 
-        # # --- Step 3: Force Each Value to a String Explicitly ---
-        # # Using .apply(lambda x: ...) is sometimes more robust than .astype(str)
-        # df["Ctg"] = df["Ctg"].apply(lambda x: str(x) if pd.notnull(x) else "")
-        # df["Rm Code"] = df["Rm Code"].apply(lambda x: str(x) if pd.notnull(x) else "")
+        # --- Step 3: Force Each Value to a String Explicitly ---
+        # Using .apply(lambda x: ...) is sometimes more robust than .astype(str)
+        df["Ctg"] = df["Ctg"].apply(lambda x: str(x) if pd.notnull(x) else "")
+        df["Rm Code"] = df["Rm Code"].apply(lambda x: str(x) if pd.notnull(x) else "")
 
-        # # --- Debug: Check the Data Types of Each Element ---
-        # print("Unique types in 'Ctg':", df["Ctg"].apply(type).unique())
-        # print("Unique types in 'Rm Code':", df["Rm Code"].apply(type).unique())
+        # --- Debug: Check the Data Types of Each Element ---
+        print("Unique types in 'Ctg':", df["Ctg"].apply(type).unique())
+        print("Unique types in 'Rm Code':", df["Rm Code"].apply(type).unique())
 
-        # # --- Step 4: Filter Rows Where "Ctg" Equals "C" ---
-        # # Now that all values should be strings, .str.upper() should work fine.
-        # filtered_df = df[df["Ctg"].str.upper() == "C"].copy()
+        # --- Step 4: Filter Rows Where "Ctg" Equals "C" ---
+        # Now that all values should be strings, .str.upper() should work fine.
+        filtered_df = df[df["Ctg"].str.upper() == "C"].copy()
 
-        # # --- Step 5: Map "Rm Code" Values Using the Dictionary ---
-        # # Ensure the dictionary keys are compared as strings.
-        # mapped_values = filtered_df["Rm Code"].apply(lambda x: constants.COLOUR_STONE_CODE.get(x, None))
+        # --- Step 5: Map "Rm Code" Values Using the Dictionary ---
+        # Ensure the dictionary keys are compared as strings.
+        mapped_values = filtered_df["Rm Code"].apply(lambda x: constants.COLOUR_STONE_CODE.get(x, None))
         
-        # # Remove None values and get unique values
-        # mapped_values = mapped_values.dropna().unique()
+        # Remove None values and get unique values
+        mapped_values = mapped_values.dropna().unique()
 
-        # # --- Step 6: Join All Mapped Values With a Slash ---
-        # joined_string = "/".join(mapped_values)
+        # --- Step 6: Join All Mapped Values With a Slash ---
+        joined_string = "/".join(mapped_values)
 
         
         diamond_stone_table = df.loc[df['Ctg'].isin(['C','D'])].groupby(["Ctg"], dropna=False).agg({
@@ -1328,13 +1328,13 @@ def process_file():
 
         # Adding data row (e.g., "Diamond")
         set_cell(ws, f'A{table + 1}', "Diamond", font=BOLD_FONT, alignment=LEFT_ALIGN)
-        # set_cell(ws, f'A{table + 2}', joined_string, font=BOLD_FONT, alignment=LEFT_ALIGN)  # Dynamically set mapped value
+        set_cell(ws, f'A{table + 2}', joined_string, font=BOLD_FONT, alignment=LEFT_ALIGN)  # Dynamically set mapped value
 
         set_cell(ws, f'A{table + 5}', "Type", font=BOLD_FONT, alignment=LEFT_ALIGN)
         set_cell(ws, f'B{table + 5}', "Value", font=BOLD_FONT, alignment=LEFT_ALIGN)
 
         set_cell(ws, f'A{table + 6}', "Diamond", font=BOLD_FONT, alignment=LEFT_ALIGN)
-        # set_cell(ws, f'A{table + 7}', joined_string, font=BOLD_FONT, alignment=LEFT_ALIGN)  # Dynamically set mapped value
+        set_cell(ws, f'A{table + 7}', joined_string, font=BOLD_FONT, alignment=LEFT_ALIGN)  # Dynamically set mapped value
         set_cell(ws, f'A{table + 8}', "Labour", font=BOLD_FONT, alignment=LEFT_ALIGN)
         set_cell(ws, f'A{table + 9}', "Grand Total", font=BOLD_FONT, alignment=LEFT_ALIGN)
         set_cell(ws, f'A{table + 3}', "Grand Total", font=BOLD_FONT, alignment=LEFT_ALIGN)
