@@ -11,6 +11,7 @@ from num2words import num2words
 from app.extensions import mysql  # Import mysql from extensions
 import json
 from openpyxl.utils import get_column_letter,column_index_from_string
+import math
 
 # app_job_work = Flask(__name__)
 app_job_work = Blueprint('app_job_work', __name__, template_folder='templates',static_folder='app/static')
@@ -518,7 +519,7 @@ def process_file():
 
             
             total_usd = labour + metal_amt + stone_amt
-            rate_avg_pp = total_usd / qty
+            rate_avg_pp = total_usd / qty if qty != 0 else rate_avg_pp
             product_name = get_product_name(ctg)
             design_ctg = (constants.DESIGN_CATEGORY[design_ctg] if design_ctg in constants.DESIGN_CATEGORY else '')
 
@@ -527,7 +528,7 @@ def process_file():
                 'No. & Kind of Pkgs': '',
                 'Description of Goods': '',
                 'Design': prev,
-                'Gross Wt (gms)': round(gross_wt, 3),
+                'Gross Wt (gms)': f"{round(gross_wt, 3):.3f}",
                 'Qty. Pcs': round(qty),
                 'Labour Amt': round(labour, 2),
                 'Metal Amt.': round(metal_amt, 2),
@@ -1070,8 +1071,16 @@ def process_file():
         batches = cur.fetchall()
 
         current_row = data_start_row_for_present_ppl + 5
-        headers = ["RM", "Met Wt Gms", "Value USD"]
-
+        # Check if qty_pcs is present in any row
+        qty_pcs_present = any("qty_pcs" in row for row in generated_table_data)
+        
+        # Set header labels and determine how many columns to merge for the batch title
+        if qty_pcs_present:
+            headers = ["RM", "Qty Pcs", "Met Wt Gms", "Value USD"]
+            merge_end_col = 4
+        else:
+            headers = ["RM", "Met Wt Gms", "Value USD"]
+            merge_end_col = 3
         for batch in batches:
             batch_id, batch_time, invoice_no_date = batch
 
@@ -1091,47 +1100,49 @@ def process_file():
             ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=4)
             current_row += 1
             
-            # Reset totals for the current batch
-            total_met_wt_gms = 0
-            total_value_usd = 0
-
-            # Dictionary to track totals for each RM
-            rm_totals = {rm: {"met_wt_gms": 0, "value_usd": 0} for rm in rm_list_for_present_ppl}
-
-
-            # Write headers
-            # Write headers for the batch
+            # Write header row for the batch
             for col_num, header in enumerate(headers, 1):
                 ws.cell(row=current_row, column=col_num, value=header)
             current_row += 1
-            # Write data rows and calculate batch totals
-            for row in rows:
-                rm_name = row[0]  # Assuming RM is the first column in the row
-                met_wt_gms = float(row[1])  # Met Wt Gms (2nd column)
-                value_usd = float(row[2])  # Value USD (3rd column)
+            # Reset totals for the current batch
+            total_met_wt_gms = 0
+            total_value_usd = 0
+            total_qty_pcs = 0  if qty_pcs_present else None
 
-                # Add to worksheet
-                for col_num, cell_value in enumerate(row, 1):
+            # Process each record for the current batch
+            for db_row in rows:
+                rm_name = db_row[0]
+                met_wt_gms = float(db_row[1])
+                value_usd = float(db_row[2])
+                
+                if qty_pcs_present:
+                    # Look up qty_pcs from generated_table_data using the RM name
+                    qty_pcs = next((item.get("qty_pcs", 0) for item in generated_table_data if item.get("rm") == rm_name), 0)
+                    row_values = [rm_name, qty_pcs, met_wt_gms, value_usd]
+                    total_qty_pcs += qty_pcs
+                else:
+                    row_values = [rm_name, met_wt_gms, value_usd]
+
+                # Write the row values to the worksheet
+                for col_num, cell_value in enumerate(row_values, 1):
                     ws.cell(row=current_row, column=col_num, value=cell_value)
+                current_row += 1
 
-                # Update totals for the batch
+                # Update totals for met_wt_gms and value_usd
                 total_met_wt_gms += met_wt_gms
                 total_value_usd += value_usd
 
-                # Update RM-specific totals
-                if rm_name in rm_totals:
-                    rm_totals[rm_name]["met_wt_gms"] += met_wt_gms
-                    rm_totals[rm_name]["value_usd"] += value_usd
+            # Write the "Total" row for this batch
+            if qty_pcs_present:
+                total_row_values = ["Total", total_qty_pcs, total_met_wt_gms, total_value_usd]
+            else:
+                total_row_values = ["Total", total_met_wt_gms, total_value_usd]
 
-                current_row += 1
-
-            # Add "Total" row for the batch
-            ws.cell(row=current_row, column=1, value="Total")
-            ws.cell(row=current_row, column=2, value=total_met_wt_gms)
-            ws.cell(row=current_row, column=3, value=total_value_usd)
-            current_row += 2  # Add spacing
-
-    # Step 1: Get Challan Data
+            for col_num, cell_value in enumerate(total_row_values, 1):
+                ws.cell(row=current_row, column=col_num, value=cell_value)
+            current_row += 2  # Add spacing after the batch table
+        
+        # Step 1: Get Challan Data
         select_challan_data_query = """
             SELECT JSON_EXTRACT(data, '$') AS challan_data 
             FROM generated_tables 
@@ -1144,15 +1155,23 @@ def process_file():
             return jsonify({'error': 'No challan data found for the provided challan number.'})
 
         challan_data = json.loads(challan_data_result[0])
+        # Check if any row in challan_data has a qty_pcs field (or a non-null value)
+        qty_pcs_present = any(row.get('qty_pcs') is not None for row in challan_data)
 
+
+
+        
         # Create a mapping for challan data by `rm`
-        challan_map = {
-            row['rm']: {
+        challan_map = {}
+        for row in challan_data:
+            rm = row['rm']
+            challan_map[rm] = {
                 'met_wt_gms': row.get('met_wt_gms', 0),
-                'value_usd': row.get('value_usd', 0),
+                'value_usd': row.get('value_usd', 0)
             }
-            for row in challan_data
-        }
+            if qty_pcs_present:
+                # If qty_pcs exists, include it (defaulting to 0 if missing)
+                challan_map[rm]['qty_pcs'] = row.get('qty_pcs', 0)
 
         # Step 2: Aggregate Batch Data
         aggregate_batch_query = """
@@ -1179,6 +1198,7 @@ def process_file():
         balance_table = []
         total_met_wt_gms = 0
         total_value_usd = 0
+        total_qty_pcs = 0  # Only used if qty_pcs_present is True
 
         # Filter out rows where 'rm' is 'TOTAL' from challan_map
         filtered_challan_map = {
@@ -1194,7 +1214,14 @@ def process_file():
                 'balance_met_wt_gms': float(challan_values['met_wt_gms']) - float(batch_values['total_met_wt_gms']),
                 'balance_value_usd': float(challan_values['value_usd']) - float(batch_values['total_value_usd']),
             }
+            
+            if qty_pcs_present:
+                # Since qty_pcs isn't subtracted (not stored in reconciliation), just take the challan value
+                balance_row['balance_qty_pcs'] = float(challan_values.get('qty_pcs', 0))
+                total_qty_pcs += balance_row['balance_qty_pcs']
+          
             balance_table.append(balance_row)
+            
             # Accumulate totals for the columns
             total_met_wt_gms += balance_row['balance_met_wt_gms']
             total_value_usd += balance_row['balance_value_usd']
@@ -1205,6 +1232,8 @@ def process_file():
             'balance_met_wt_gms': total_met_wt_gms,
             'balance_value_usd': total_value_usd,
         }
+        if qty_pcs_present:
+            total_row_for_reco['balance_qty_pcs'] = total_qty_pcs
         balance_table.append(total_row_for_reco)
 
         # Step 4: Add Balance Table to Excel
@@ -1221,18 +1250,28 @@ def process_file():
         current_row += 2
 
         # Write Balance Table Headers
-        balance_headers = ["RM", "Met Wt Gms", "Value USD"]
+        # Write Balance Table Headers (update headers if qty_pcs is present)
+        if qty_pcs_present:
+            balance_headers = ["RM", "Qty Pcs", "Met Wt Gms", "Value USD"]
+        else:
+            balance_headers = ["RM", "Met Wt Gms", "Value USD"]
+
         for col_num, header in enumerate(balance_headers, 1):
             ws.cell(row=current_row, column=col_num, value=header)
         current_row += 1
 
-        # Write Balance Table Data (Ensuring Positive Values)
+        # Write Balance Table Data (ensuring positive values)
         for row in balance_table:
-            ws.cell(row=current_row, column=1, value=row['rm'])
-            ws.cell(row=current_row, column=2, value=abs(row['balance_met_wt_gms']))  # Ensure non-negative
-            ws.cell(row=current_row, column=3, value=abs(row['balance_value_usd']))   # Ensure non-negative
+            if qty_pcs_present:
+                ws.cell(row=current_row, column=1, value=row['rm'])
+                ws.cell(row=current_row, column=2, value=abs(row.get('balance_qty_pcs', 0)))
+                ws.cell(row=current_row, column=3, value=abs(row['balance_met_wt_gms']))
+                ws.cell(row=current_row, column=4, value=abs(row['balance_value_usd']))
+            else:
+                ws.cell(row=current_row, column=1, value=row['rm'])
+                ws.cell(row=current_row, column=2, value=abs(row['balance_met_wt_gms']))
+                ws.cell(row=current_row, column=3, value=abs(row['balance_value_usd']))
             current_row += 1
-
 
         cur.close()
         
