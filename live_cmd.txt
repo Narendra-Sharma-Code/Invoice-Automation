@@ -11,3 +11,43 @@ git checkout master
 git pull 
 
 sudo nano /etc/systemd/system/gunicorn.service
+
+
+
+
+
+ if return_switch == "on":
+            # Ensure 'i' is initialized correctly
+            i = header_row_for_return + 1  # Starting row for writing data
+
+            # Correctly identify the second last column index
+            second_last_col_index = ws.max_column  # Now truly the  last column
+            second_last_col_letter = get_column_letter(second_last_col_index)  # Using utility function
+
+            # Loop through all rows except the last (total) row
+            for balance_row in balance_table[:-1]:
+                # Check for required keys to avoid KeyError
+                if all(key in balance_row for key in ['balance_met_wt_gms', 'balance_value_usd', 'rm']):
+                    print(f"Writing balance_met_wt_gms: {balance_row['balance_met_wt_gms']} and balance_value_usd: {balance_row['balance_value_usd']} for RM: {balance_row['rm']}")
+
+                    # Write to column D (4th column) with absolute value
+                    ws[f'D{i}'] = abs(balance_row['balance_met_wt_gms'])  # Apply abs()
+
+                    # Write to the second last column with absolute value
+                    ws[f'{second_last_col_letter}{i}'] = abs(balance_row['balance_value_usd'])  # Apply abs()
+
+                    i += 1  # Move to next row
+                else:
+                    print(f"Skipping row due to missing keys: {balance_row}")
+        else:
+            # Handle the case when return_switch is not "on" if necessary
+            pass  # Or add appropriate logic
+
+ # Accumulate totals for the columns
+            total_met_wt_gms += balance_row['balance_met_wt_gms']
+            total_value_usd += balance_row['balance_value_usd']
+
+
+    rm_list = request.form.getlist('rm[]')
+
+    
