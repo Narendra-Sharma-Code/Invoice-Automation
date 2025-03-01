@@ -1660,18 +1660,48 @@ def get_metal_mapping(output_header, row, ctg, metal_kt):
     return return_dict
 
 
-def get_product_name(ctg):
+def get_product_name(ctg, rm_code=''):
+    # Step 1: Check if "D" or "C" is present anywhere in the ctg input.
+    # Also record whether "C" specifically is present.
+    found = False
+    contains_C = False
+    for item in ctg:
+        for code in item.split(','):
+            code = code.strip()
+            if code in ["D", "C"]:
+                found = True
+            if code == "C":
+                contains_C = True
+
+    # Step 2: Build the product name using the original logic.
     product_name = ''
     skip_list = ['nan', 'M']
-    for i in ctg:
-        value_list = i.split(',')
-        for j in value_list:
-            if j in skip_list:
+    for item in ctg:
+        value_list = item.split(',')
+        for code in value_list:
+            code = code.strip()  # Remove any extra whitespace
+            if code in skip_list:
                 continue
-            product_name = product_name + ' ' + (constants.STATEMENT_DICT.get(j, ''))
+            product_name += ' ' + (constants.STATEMENT_DICT.get(code, ''))
+    
+    # Remove any extra spaces.
+    product_name = product_name.strip()
+    
+    # Step 3: If neither "D" nor "C" was found, prepend "Plain".
+    if not found:
+        product_name = "Plain " + product_name
 
-    return product_name.strip() + ' Jewellery'
-        
+    # Step 4: If "C" is present and an rm_code is provided, look up the code in COLOUR_STONE_CODE.
+    if contains_C and rm_code:
+        # Look up the rm_code in the COLOUR_STONE_CODE dictionary.
+        colour_descriptor = constants.COLOUR_STONE_CODE.get(rm_code, '')
+        # If a descriptor is found, prepend it to the product name.
+        if colour_descriptor:
+            product_name = colour_descriptor + " " + product_name
+
+    # Step 5: Append the fixed suffix and return.
+    return product_name + ' Jewellery'
+
 
 def map_headers_to_data(headers, data):
     mapped_data = []

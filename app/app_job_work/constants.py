@@ -12,7 +12,7 @@ CATEGORY_DICT = {
 
 STATEMENT_DICT = {
     "G": "Gold",
-    "S": "925 Silver",
+    "S": "Comb. with 925 Silver",
     "C": "Synthetic Color Stone Studded",
     "D": "Diamond Studded",
     "M": "Metal",
