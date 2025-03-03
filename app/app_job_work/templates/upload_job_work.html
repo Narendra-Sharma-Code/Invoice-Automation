@@ -5,21 +5,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Excel File</title>
+    <!-- Google Fonts for a modern professional look -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body {
+        :root {
+            --primary: #0052cc;
+            /* Professional blue */
+            --accent: #2684ff;
+            /* Accent blue */
+            --bg-gradient-start: #f7f9fc;
+            --bg-gradient-end: #e9eff5;
+            --container-bg: #ffffff;
+            --border-color: #dfe3e8;
+            --text-color: #333333;
+            --hover-shadow: 0 0 10px rgba(0, 82, 204, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Roboto', Arial, sans-serif;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background: linear-gradient(to bottom, #2b2b2b, #3b3b3b);
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+            color: var(--text-color);
             overflow: hidden;
-            color: #fff;
         }
 
-        canvas {
+        canvas#background {
             position: absolute;
             top: 0;
             left: 0;
@@ -29,29 +49,32 @@
         }
 
         .container {
-            display: flex;
-            justify-content: center;
             width: 100%;
             max-width: 1200px;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
         }
 
         .upload-container {
-            background: rgba(0, 0, 0, 0.6);
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
             border-radius: 20px;
             padding: 40px 60px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
-            backdrop-filter: blur(15px);
+            animation: fadeIn 0.8s ease-in-out;
         }
 
         .upload-container h1 {
             font-size: 36px;
-            color: #8a8a8a;
+            color: var(--primary);
             text-align: center;
             margin-bottom: 20px;
-            font-weight: bold;
+            font-weight: 700;
+            letter-spacing: 0.5px;
         }
 
         label {
@@ -59,7 +82,7 @@
             font-weight: 500;
             margin-top: 20px;
             display: block;
-            color: #bbb;
+            color: var(--text-color);
         }
 
         input[type="file"],
@@ -70,34 +93,35 @@
             padding: 15px;
             font-size: 16px;
             border-radius: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid #444;
-            color: white;
+            background: var(--bg-gradient-end);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
             margin-top: 10px;
-            transition: background-color 0.3s ease, transform 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
         }
 
         input[type="file"]:hover,
         input[type="text"]:hover,
         input[type="number"]:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: var(--bg-gradient-start);
             transform: scale(1.02);
+            box-shadow: var(--hover-shadow);
         }
 
         input[type="submit"] {
-            background: #8a8a8a;
-            color: #1e1e1e;
+            background: var(--primary);
+            color: #ffffff;
             border: none;
             cursor: pointer;
             margin-top: 20px;
             padding: 16px 0;
             border-radius: 50px;
-            transition: all 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
         input[type="submit"]:hover {
-            background: #8a8a8a;
-            transform: translateY(-5px);
+            transform: translateY(-3px);
+            box-shadow: var(--hover-shadow);
         }
 
         table {
@@ -109,32 +133,33 @@
         table th,
         table td {
             padding: 15px;
-            border: 1px solid #444;
+            border: 1px solid var(--border-color);
             text-align: center;
-            color: #ddd;
+            color: var(--text-color);
         }
 
         table th {
-            background: #8a8a8a;
-            color: #1e1e1e;
-            font-weight: bold;
+            background: var(--primary);
+            color: #ffffff;
+            font-weight: 700;
         }
 
         #addRow,
         .delete-row-btn {
-            background: #8a8a8a;
-            color: #fff;
+            background: var(--primary);
+            color: #ffffff;
             border: none;
             padding: 12px 18px;
             border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
-            transition: all 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
         #addRow:hover,
         .delete-row-btn:hover {
-            background: #8a8a8a;
+            transform: scale(1.05);
+            box-shadow: var(--hover-shadow);
         }
 
         .file-input-container {
@@ -146,80 +171,79 @@
         .file-input-container p {
             margin: 15px 0;
             font-size: 18px;
+            color: var(--text-color);
         }
 
         .file-input-container label {
             font-size: 16px;
-            color: #fff;
+            color: var(--primary);
             text-transform: uppercase;
-            font-weight: bold;
+            font-weight: 500;
             cursor: pointer;
         }
 
         #dropzone {
-            background: #1e1e1e;
+            background: var(--bg-gradient-end);
             padding: 30px 40px;
             border-radius: 10px;
             margin-bottom: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            border: 2px dashed #8a8a8a;
+            border: 2px dashed var(--primary);
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
         }
 
         #dropzone:hover {
-            background: rgba(0, 224, 177, 0.1);
-            transform: scale(1.05);
+            background: var(--bg-gradient-start);
+            transform: scale(1.03);
+            box-shadow: var(--hover-shadow);
         }
 
         #dropzone p {
             margin: 10px 0;
-            color: #bbb;
+            color: var(--text-color);
             font-size: 18px;
         }
 
         /* Logo Styling */
         .logo-container {
-            position: absolute; /* Position relative to the body */
-            top: 10px; /* Distance from the top of the viewport */
-            left: 10px; /* Distance from the left of the viewport */
-            z-index: 100; /* Ensure it stays above other elements */ 
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
         }
 
         .logo-container img {
-            max-width: 50px; /* Set a fixed maximum width for better visibility */
-            height: auto; /* Maintain aspect ratio */
+            max-width: 60px;
+            height: auto;
         }
 
-            /* Container for alignment */
+        /* Switch container styling */
         .switch-container {
             display: flex;
-            align-items: center; /* Ensures vertical alignment */
-            gap: 10px; /* Space between the switch and the text */
-            padding: 10px; /* Add padding for better spacing */
-            background-color: rgba(255, 255, 255, 0.1); /* Optional: Light background */
-            border-radius: 10px; /* Rounded corners for the container */
-            margin-top: 20px; /* Space above the container */
-            width: fit-content; /* Container width adjusts to its content */
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background-color: var(--bg-gradient-end);
+            border-radius: 10px;
+            margin-top: 20px;
+            width: fit-content;
         }
 
-        /* Styling for the Return text */
         .return-text {
             font-size: 18px;
-            color: #bbb; /* Matches other text styles */
+            color: var(--text-color);
             font-weight: 500;
-            line-height: 20px; /* Matches the height of the toggle switch */
+            line-height: 20px;
         }
 
-        /* Switch styling */
         .switch {
             position: relative;
             display: inline-block;
             width: 34px;
             height: 20px;
-            vertical-align: middle; /* Aligns the switch with text */
         }
 
         .switch input {
@@ -233,7 +257,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #555; /* Visible on dark backgrounds */
+            background-color: var(--border-color);
             transition: 0.4s;
             border-radius: 20px;
         }
@@ -245,26 +269,25 @@
             width: 14px;
             left: 3px;
             bottom: 3px;
-            background-color: white;
+            background-color: var(--container-bg);
             transition: 0.4s;
             border-radius: 50%;
         }
 
-        input:checked + .slider {
-            background-color: #0f62fe;
+        input:checked+.slider {
+            background-color: var(--primary);
         }
 
-        input:checked + .slider:before {
+        input:checked+.slider:before {
             transform: translateX(14px);
         }
-
-
 
         @keyframes fadeIn {
             from {
                 opacity: 0;
                 transform: scale(0.8);
             }
+
             to {
                 opacity: 1;
                 transform: scale(1);
@@ -274,7 +297,7 @@
 </head>
 
 <body>
-    <canvas id="stars"></canvas>
+    <canvas id="background"></canvas>
     <!-- Logo Section -->
     <div class="logo-container">
         <img src="/static/New_Logo_with_Name-removebg-preview.png" alt="FINOCOS Logo">
@@ -284,9 +307,6 @@
         <div class="upload-container">
             <h1>Upload Your Job Work PPL File</h1>
             <form action="{{ url_for('app_job_work.process_file') }}" method="post" enctype="multipart/form-data">
-               
-              
-               
                 <!-- File Upload Section -->
                 <div class="file-input-container">
                     <div id="dropzone">
@@ -298,10 +318,10 @@
 
                 <label for="challan_no">Challan No.</label>
                 <input type="text" id="challan_no" name="challan_no" placeholder="Enter Challan No." required>
-                
-                <label for="request_id">Request id </label>
+
+                <label for="request_id">Request id</label>
                 <input type="text" id="request_id" name="request_id" placeholder="Enter Request id" required>
-                
+
                 <label for="exchange_rate">Exchange Rate</label>
                 <input type="number" step="0.01" id="exchange_rate" name="exchange_rate"
                     placeholder="Enter exchange rate" required>
@@ -313,20 +333,22 @@
                 <label for="Exporter_Ref">Exporter's Ref</label>
                 <input type="text" id="Exporter_Ref" name="Exporter_Ref" placeholder="Enter Exporter's Ref" required>
 
-                <!-- New Field for Buyer's Ord No. & Date Ref -->
                 <label for="buyers_ord_no_date">Buyer's Ord No. & Date Ref.</label>
                 <input type="text" id="buyers_ord_no_date" name="buyers_ord_no_date"
                     placeholder="Enter Buyer's Ord No. & Date Ref." required>
-                <!-- Add spacing -->
-                <div style="margin-top: 20px;"></div>
+
                 <!-- Checkbox -->
-                <label for="return-switch">
-                    <input type="checkbox" id="return-switch" name="return_switch" value="on">
-                    Return
-                </label>
-                <div style="margin-top: 20px;"></div>
-                <!-- Dynamic Table for RM, QTY PCS, Met. Wt.Gms, and Value US$ -->
-                <h2>Enter Details for RM, QTY PCS, Met. Wt.Gms, Value US$ and Rate per Grams</h2>
+                <div class="switch-container">
+                    <label class="return-text" for="return-switch">Return</label>
+                    <label class="switch">
+                        <input type="checkbox" id="return-switch" name="return_switch" value="on">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <!-- Dynamic Table for RM, QTY PCS, Met. Wt.Gms, Value US$, and Rate per Grams -->
+                <h2 style="margin-top:30px;">Enter Details for RM, QTY PCS, Met. Wt.Gms, Value US$, and Rate per Grams
+                </h2>
                 <table id="rmTable">
                     <thead>
                         <tr>
@@ -344,49 +366,68 @@
 
                 <input type="submit" value="Upload">
             </form>
-
         </div>
     </div>
 
     <script>
-
-        // Star animation
-        const canvas = document.getElementById('stars');
+        // Subtle animated particle background effect
+        const canvas = document.getElementById('background');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        const stars = [];
-        for (let i = 0; i < 150; i++) {
-            stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height });
+        const particles = [];
+        const particleCount = 80;
+
+        function initParticles() {
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 1.5 + 0.5,
+                    dx: (Math.random() - 0.5) * 0.5,
+                    dy: (Math.random() - 0.5) * 0.5
+                });
+            }
         }
 
-        function updateStars() {
+        function updateParticles() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            stars.forEach(star => {
+            particles.forEach(p => {
+                p.x += p.dx;
+                p.y += p.dy;
+
+                // Wrap around edges
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height;
+                if (p.y > canvas.height) p.y = 0;
+
                 ctx.beginPath();
-                ctx.arc(star.x, star.y, 2, 0, Math.PI * 2);
-                ctx.fillStyle = 'white';
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0,82,204,0.3)';
                 ctx.fill();
             });
-            requestAnimationFrame(updateStars);
+            requestAnimationFrame(updateParticles);
         }
-        updateStars();
 
-        // Dynamic Table for RM, QTY PCS, Met. Wt.Gms, and Value US$
+        initParticles();
+        updateParticles();
+
+        // Dynamic Table for RM, QTY PCS, Met. Wt.Gms, Value US$, and Rate per Grams
         const addRowButton = document.getElementById('addRow');
         const rmTable = document.getElementById('rmTable').querySelector('tbody');
 
         addRowButton.addEventListener('click', () => {
             const row = document.createElement('tr');
             row.innerHTML = `
-        <td><input type="text" name="rm[]" placeholder="Enter RM" ></td>
-        <td><input type="number" name="qty_pcs[]" placeholder="Enter QTY PCS" step="any"></td> <!-- Allows any decimal value -->
-        <td><input type="number" step="any" name="met_wt_gms[]" placeholder="Enter Met. Wt.Gms" ></td> <!-- Allows any decimal value -->
-        <td><input type="number" step="any" name="value_usd[]" placeholder="Enter Value US$" ></td> <!-- Allows any decimal value -->
-        <td><input type="number" step="any" name="rate[]" placeholder="Rate per Grams" required></td> <!-- Allows any decimal value -->
+        <td><input type="text" name="rm[]" placeholder="Enter RM"></td>
+        <td><input type="number" name="qty_pcs[]" placeholder="Enter QTY PCS" step="any"></td>
+        <td><input type="number" step="any" name="met_wt_gms[]" placeholder="Enter Met. Wt.Gms"></td>
+        <td><input type="number" step="any" name="value_usd[]" placeholder="Enter Value US$"></td>
+        <td><input type="number" step="any" name="rate[]" placeholder="Rate per Grams" required></td>
         <td><button type="button" class="delete-row-btn">Delete</button></td>
-    `;
+      `;
             rmTable.appendChild(row);
 
             row.querySelector('.delete-row-btn').addEventListener('click', () => {
@@ -394,26 +435,22 @@
             });
         });
 
-
         // File info display
         const fileInput = document.getElementById('file');
         fileInput.addEventListener('change', event => {
             const file = event.target.files[0];
             if (file) {
-                alert('Selected file: ${ file.name }');
+                alert(`Selected file: ${file.name}`);
             }
         });
-        // Add event listener for form submission if additional logic is needed
+
+        // Log checkbox state on form submission
         const form = document.querySelector("form");
         form.addEventListener("submit", () => {
             const checkbox = document.getElementById("return-switch");
             console.log(`Checkbox state: ${checkbox.checked ? "on" : "off"}`);
         });
-
-
-
     </script>
-
 </body>
 
 </html>
