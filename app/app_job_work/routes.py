@@ -467,7 +467,7 @@ def process_file():
     df.columns = df.columns.str.strip()  # Remove leading/trailing spaces
     df.columns = df.columns.str.replace(r'\s+', ' ', regex=True)  # Replace multiple spaces with a single space
     df.columns = df.columns.str.replace(r'[^A-Za-z0-9 ]+', '', regex=True)  # Remove special characters
-
+ 
 # Step 2: Add default values for missing columns
     required_columns = [
         'INR LABOUR', 'Inv Rm Wt', 'Design', 'Ctg', 'Metal KT', 
@@ -494,7 +494,8 @@ def process_file():
         "Inv Value": "sum",
         "Labour": "sum",
         "INR LABOUR": "sum",
-        "Qty": "sum"
+        "Qty": "sum",
+        "Rm Code": "first"  # Include Rm Code
     }).reset_index()
 
     
@@ -503,8 +504,10 @@ def process_file():
     gross_wt = qty = labour = rate_avg_pp = metal_amt = total_usd = stone_amt = 0
     design_ctg = product_name = ''
     ctg = []
+    rm_code_list = []  # New list for Rm Code values
     temp_dict = {}
     metal_temp = {}
+    
 
     for index, row in grouped.iterrows():
         if not prev:
@@ -512,6 +515,8 @@ def process_file():
         elif prev != row['Design'] or index == (grouped.shape[0] - 1):
             if index == (grouped.shape[0] - 1):
                 ctg.append(f"{row['Ctg']},{row['Metal KT']}")
+                # Also collect the Rm Code from the row
+                rm_code_list.append(str(row['Rm Code']).strip())
                 design_ctg = row['DsgCtg']
                 gross_wt += row['Gross Wt']
                 qty += row['Qty']
@@ -520,10 +525,11 @@ def process_file():
                 stone_amt += row['Inv Value'] if row['Ctg'] in ['C','D'] else 0
                 metal_temp.update(get_metal_mapping(output_header, row, row['Ctg'], row['Metal KT']))
 
-            
+            ctg_str = ", ".join(ctg)
+            rm_code_str = ", ".join(rm_code_list)
             total_usd = labour + metal_amt + stone_amt
             rate_avg_pp = total_usd / qty if qty != 0 else rate_avg_pp
-            product_name = get_product_name(ctg)
+            product_name = get_product_name(ctg_str, rm_code_str)
             design_ctg = (constants.DESIGN_CATEGORY[design_ctg] if design_ctg in constants.DESIGN_CATEGORY else '')
 
             temp_dict = {
@@ -546,11 +552,13 @@ def process_file():
             gross_wt = qty = labour = rate_avg_pp = metal_amt = total_usd = stone_amt = 0
             design_ctg = product_name = ''
             ctg = []
+            rm_code_list = []  # Reset the Rm Code list
             temp_dict = {}
             metal_temp = {}
             prev = row['Design']
 
         ctg.append(f"{row['Ctg']},{row['Metal KT']}")
+        rm_code_list.append(str(row['Rm Code']).strip())
         design_ctg = row['DsgCtg']
         gross_wt += row['Gross Wt']
         qty += row['Qty']
@@ -562,6 +570,7 @@ def process_file():
     # Map headers to the final output
     mapped_data = map_headers_to_data(output_header, final_list)
     # print(mapped_data)
+    
 
     # Create final DataFrame from the mapped data
     final_output = pd.DataFrame(mapped_data)
@@ -1660,47 +1669,45 @@ def get_metal_mapping(output_header, row, ctg, metal_kt):
     return return_dict
 
 
-def get_product_name(ctg, rm_code=''):
-    # Step 1: Check if "D" or "C" is present anywhere in the ctg input.
-    # Also record whether "C" specifically is present.
-    found = False
-    contains_C = False
-    for item in ctg:
-        for code in item.split(','):
-            code = code.strip()
-            if code in ["D", "C"]:
-                found = True
-            if code == "C":
-                contains_C = True
+def get_product_name(ctg_str, rm_code_str):
+    # Step 1: Convert the comma-separated strings into lists
+    ctg_list = ctg_str.split(',')  # List of Ctg values
+    rm_code_list = rm_code_str.split(',')  # List of Rm Code values
 
-    # Step 2: Build the product name using the original logic.
+    found = False
     product_name = ''
     skip_list = ['nan', 'M']
-    for item in ctg:
-        value_list = item.split(',')
-        for code in value_list:
-            code = code.strip()  # Remove any extra whitespace
-            if code in skip_list:
-                continue
-            product_name += ' ' + (constants.STATEMENT_DICT.get(code, ''))
-    
-    # Remove any extra spaces.
+
+    for i, code in enumerate(ctg_list):  
+        code = code.strip()  # Clean extra spaces
+
+        if code in skip_list:
+            continue
+
+        if code == "C":  
+            # If "C" is found, check the corresponding Rm Code
+            if i < len(rm_code_list):  
+                rm_code = rm_code_list[i].strip()
+                # Fetch the mapped value from COLOUR_STONE_CODE dictionary
+                mapped_value = constants.COLOUR_STONE_CODE.get(rm_code, '')
+                product_name += ' ' + mapped_value  
+        else:
+            # Fetch from STATEMENT_DICT for non-"C" values
+            product_name += ' ' + constants.STATEMENT_DICT.get(code, '')
+
+        if code in ["D", "C"]:
+            found = True
+
+    # Remove leading/trailing spaces
     product_name = product_name.strip()
-    
-    # Step 3: If neither "D" nor "C" was found, prepend "Plain".
+
+    # Step 3: If neither "D" nor "C" was found, prepend "Plain"
     if not found:
         product_name = "Plain " + product_name
 
-    # Step 4: If "C" is present and an rm_code is provided, look up the code in COLOUR_STONE_CODE.
-    if contains_C and rm_code:
-        # Look up the rm_code in the COLOUR_STONE_CODE dictionary.
-        colour_descriptor = constants.COLOUR_STONE_CODE.get(rm_code, '')
-        # If a descriptor is found, prepend it to the product name.
-        if colour_descriptor:
-            product_name = colour_descriptor + " " + product_name
-
-    # Step 5: Append the fixed suffix and return.
+    # Step 4: Append the fixed suffix and return
     return product_name + ' Jewellery'
+
 
 
 def map_headers_to_data(headers, data):
