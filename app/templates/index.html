@@ -1,195 +1,184 @@
 <!doctype html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Landing Page</title>
-    <style>
-        /* General Reset */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Landing Page</title>
+  <!-- Google Font for a modern professional look -->
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0052cc;
+      --accent: #2684ff;
+      --bg-gradient-start: #f7f9fc;
+      --bg-gradient-end: #e9eff5;
+      --container-bg: #ffffff;
+      --border-color: #dfe3e8;
+      --text-color: #333333;
+      --hover-shadow: 0 0 10px rgba(0,82,204,0.2);
+    }
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(to bottom, #2b2b2b, #3b3b3b);
-            color: #eaeaea;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-        }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
 
-        .container {
-            text-align: center;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 50px 70px;
-            border-radius: 20px;
-            box-shadow: 0 20px 30px rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(15px);
-            max-width: 600px;
-            width: 90%;
-            animation: fadeIn 1s ease forwards;
-        }
+    canvas#background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
+    .container {
+      text-align: center;
+      background: var(--container-bg);
+      padding: 40px 60px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.05);
+      max-width: 600px;
+      width: 90%;
+      animation: fadeIn 1s ease forwards;
+      position: relative;
+      z-index: 1;
+    }
 
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 
-        h1 {
-            font-size: 3rem;
-            color: #8a8a8a;
-            text-shadow: 0px 0px 10px #2b2c2c, 0px 0px 20px #222323;
-            margin-bottom: 40px;
-            font-weight: bold;
-        }
+    h1 {
+      font-size: 36px;
+      color: var(--primary);
+      margin-bottom: 30px;
+      font-weight: 700;
+    }
 
-        .button {
-            display: inline-block;
-            background: #8a8a8a;
-            color: #fff;
-            padding: 20px 40px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            border-radius: 50px;
-            border: none;
-            cursor: pointer;
-            margin: 20px;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            position: relative;
-            overflow: hidden;
-        }
+    .button {
+      display: inline-block;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      color: #ffffff;
+      padding: 15px 35px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      border-radius: 50px;
+      border: none;
+      cursor: pointer;
+      margin: 15px;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      position: relative;
+    }
 
-        .button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
-        }
+    .button:hover {
+      background: linear-gradient(to right, var(--accent), var(--primary));
+      transform: translateY(-3px);
+      box-shadow: var(--hover-shadow);
+    }
 
-        .button:hover::before {
-            left: 100%;
-        }
+    .button:active {
+      transform: scale(0.95);
+    }
 
-        .button:hover {
-            background: #8a8a8a;
-            transform: translateY(-5px);
-            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.5);
-        }
+    .logo-container {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 100;
+    }
 
-        .button:active {
-            transform: scale(0.95);
-        }
-        /* Logo Styling */
-        .logo-container {
-            position: absolute; /* Position relative to the body */
-            top: 10px; /* Distance from the top of the viewport */
-            left: 10px; /* Distance from the left of the viewport */
-            z-index: 100; /* Ensure it stays above other elements */
-        }
-
-        .logo-container img {
-            max-width: 50px; /* Set a fixed maximum width for better visibility */
-            height: auto; /* Maintain aspect ratio */
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-    </style>
+    .logo-container img {
+      max-width: 60px;
+      height: auto;
+    }
+  </style>
 </head>
-
 <body>
-    <!-- Star background -->
-    <canvas id="stars"></canvas>
-    <!-- Logo Section -->
-    <div class="logo-container">
-        <img src="/static/New_Logo_with_Name-removebg-preview.png" alt="FINOCOS Logo">
-    </div>
+  <canvas id="background"></canvas>
+  <!-- Logo Section -->
+  <div class="logo-container">
+    <img src="/static/New_Logo_with_Name-removebg-preview.png" alt="FINOCOS Logo">
+  </div>
+  
+  <div class="container">
+    <h1>Choose Invoice Type</h1>
+    <a href="{{ url_for('app_job_work.upload_job_work') }}" class="button">Job Work Invoice</a>
+    <a href="{{ url_for('app_lab_inv.upload_lab_inv') }}" class="button">Labour Invoice</a>
+  </div>
 
-    <div class="container">
-        <h1>Choose Invoice Type</h1>
-        <a href="{{ url_for('app_job_work.upload_job_work') }}" class="button">Job Work Invoice</a>
-        <a href="{{ url_for('app_lab_inv.upload_lab_inv') }}" class="button">Labour Invoice</a>
-    </div>
+  <script>
+    // Particle animation for subtle background effect
+    const canvas = document.getElementById('background');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-    <script>
-        // Star background animation
-        const canvas = document.getElementById('stars');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+    const particles = [];
+    const particleCount = 80;
 
-        const stars = [];
-        for (let i = 0; i < 150; i++) {
-            stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height });
-        }
-
-        function updateStars() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            stars.forEach(star => {
-                ctx.beginPath();
-                ctx.arc(star.x, star.y, 2, 0, Math.PI * 2);
-                ctx.fillStyle = 'white';
-                ctx.fill();
-            });
-            requestAnimationFrame(updateStars);
-        }
-
-        updateStars();
-
-        // Resize canvas on window resize
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+    function initParticles() {
+      for (let i = 0; i < particleCount; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 1.5 + 0.5,
+          dx: (Math.random() - 0.5) * 0.5,
+          dy: (Math.random() - 0.5) * 0.5
         });
+      }
+    }
 
-        // Futuristic hover effect on buttons
-        const buttons = document.querySelectorAll('.button');
-        buttons.forEach(button => {
-            button.addEventListener('mousemove', e => {
-                const rect = button.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                button.style.setProperty('--x', `${x}px`);
-                button.style.setProperty('--y', `${y}px`);
-            });
-        });
-    </script>
+    function updateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.x += p.dx;
+        p.y += p.dy;
+
+        // Wrap around edges
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,82,204,0.3)';
+        ctx.fill();
+      });
+      requestAnimationFrame(updateParticles);
+    }
+
+    initParticles();
+    updateParticles();
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
 </body>
-
 </html>

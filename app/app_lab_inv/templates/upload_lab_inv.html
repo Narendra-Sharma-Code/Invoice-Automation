@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Packing List</title>
+    <!-- Google Font for a modern, professional look -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         /* General Reset */
         * {
@@ -15,13 +18,12 @@
 
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(to bottom, #2b2b2b, #3b3b3b);
-            color: #eaeaea;
+            background: linear-gradient(to bottom, #f5f7fa, #c3cfe2);
+            color: #333333;
             display: flex;
             justify-content: center;
             min-height: 100vh;
-            margin: 0;
-            padding: 0 20px;
+            padding: 20px;
             overflow-x: hidden;
         }
 
@@ -40,14 +42,14 @@
 
         .container {
             text-align: center;
-            background: rgba(0, 0, 0, 0.8);
+            background: #ffffff;
             padding: 50px 70px;
             border-radius: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8), 0 0 50px rgba(255, 255, 255, 0.1);
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             max-width: 600px;
             width: 100%;
-            margin: 50px 0;
+            margin: 50px auto;
             animation: fadeIn 1s ease forwards;
         }
 
@@ -64,9 +66,8 @@
         }
 
         h1 {
-            font-size: 2rem;
-            color: #8a8a8a;
-            text-shadow: 0px 0px 20px #3b3b3b, 0px 0px 40px #2b2b2b;
+            font-size: 2.5rem;
+            color: #333333;
             margin-bottom: 40px;
             font-weight: bold;
             position: relative;
@@ -80,9 +81,8 @@
             transform: translateX(-50%);
             width: 120px;
             height: 4px;
-            background: #8a8a8a;
+            background: #0052cc;
             border-radius: 2px;
-            box-shadow: 0 0 15px #8a8a8a, 0 0 30px #8a8a8a;
         }
 
         form {
@@ -91,41 +91,41 @@
             gap: 20px;
         }
 
-        label {
+        /* File upload label styled as a button */
+        label[for="file-upload"] {
             display: block;
             position: relative;
             padding: 15px 40px;
             font-size: 1.2rem;
-            color: #fff;
-            background: linear-gradient(135deg, #8a8a8a, #6b6b6b);
+            color: #333;
+            background: linear-gradient(135deg, #e0e0e0, #f9f9f9);
             border-radius: 30px;
             cursor: pointer;
             overflow: hidden;
             text-transform: uppercase;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
         }
 
-        label::before {
-            
+        label[for="file-upload"]::before {
+            content: '';
             position: absolute;
             top: 0;
             left: -100%;
             width: 200%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(0, 82, 204, 0.1);
             transform: skewX(-30deg);
             transition: left 0.5s ease;
         }
 
-        label:hover::before {
+        label[for="file-upload"]:hover::before {
             left: 100%;
         }
 
-        label:hover {
-            background: #7a7a7a;
-            box-shadow: 0 0 20px #8a8a8a, 0 0 40px #6b6b6b;
-            transform: translateY(-5px);
+        label[for="file-upload"]:hover {
+            background: #e0e0e0;
+            transform: translateY(-3px);
         }
 
         input[type="file"] {
@@ -135,18 +135,18 @@
         input[type="text"] {
             padding: 15px 20px;
             font-size: 1rem;
-            border: 2px solid #8a8a8a;
+            border: 1px solid #ccc;
             border-radius: 10px;
-            background: transparent;
-            color: #eaeaea;
+            background: #ffffff;
+            color: #333;
             outline: none;
             transition: border 0.3s ease, box-shadow 0.3s ease;
             width: 100%;
         }
 
         input[type="text"]:focus {
-            border-color: #7a7a7a;
-            box-shadow: 0 0 10px #8a8a8a, 0 0 20px #6b6b6b;
+            border-color: #0052cc;
+            box-shadow: 0 0 8px rgba(0, 82, 204, 0.3);
         }
 
         input[type="submit"] {
@@ -156,14 +156,14 @@
             font-size: 1.2rem;
             font-weight: bold;
             text-transform: uppercase;
-            color: #fff;
-            background: #8a8a8a;
+            color: #ffffff;
+            background: #0052cc;
             border-radius: 30px;
             border: none;
             cursor: pointer;
             transition: all 0.3s ease;
             overflow: hidden;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 2px 6px rgba(0, 82, 204, 0.3);
         }
 
         input[type="submit"]::before {
@@ -183,44 +183,32 @@
         }
 
         input[type="submit"]:hover {
-            background: #7a7a7a;
-            box-shadow: 0 0 20px #8a8a8a, 0 0 40px #6b6b6b;
-            transform: translateY(-5px);
+            background: #0041a8;
+            transform: translateY(-3px);
         }
 
         input[type="submit"]:active {
-            transform: scale(0.95);
+            transform: scale(0.97);
         }
 
         #file-name {
             text-align: center;
             margin-top: 10px;
             font-size: 1rem;
-            color: #eaeaea;
+            color: #333;
         }
 
         /* Logo Styling */
         .logo-container {
-            position: absolute; /* Position relative to the body */
-            top: 10px; /* Distance from the top of the viewport */
-            left: 10px; /* Distance from the left of the viewport */
-            z-index: 100; /* Ensure it stays above other elements */
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
         }
 
         .logo-container img {
-            max-width: 50px; /* Set a fixed maximum width for better visibility */
-            height: auto; /* Maintain aspect ratio */
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+            max-width: 50px;
+            height: auto;
         }
     </style>
 </head>
@@ -248,30 +236,41 @@
     </div>
 
     <script>
-        // Twinkling star background
+        // Subtle particle background effect
         const canvas = document.getElementById('stars');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        const stars = Array.from({ length: 150 }, () => ({
+        const particles = Array.from({ length: 100 }, () => ({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
-            radius: Math.random() * 2 + 1
+            radius: Math.random() * 1.5 + 0.5,
+            dx: (Math.random() - 0.5) * 0.3,
+            dy: (Math.random() - 0.5) * 0.3
         }));
 
-        function drawStars() {
+        function animateParticles() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            stars.forEach(star => {
+            particles.forEach(p => {
+                p.x += p.dx;
+                p.y += p.dy;
+
+                // Wrap around the screen
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height;
+                if (p.y > canvas.height) p.y = 0;
+
                 ctx.beginPath();
-                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-                ctx.fillStyle = 'white';
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0, 82, 204, 0.1)';
                 ctx.fill();
             });
-            requestAnimationFrame(drawStars);
+            requestAnimationFrame(animateParticles);
         }
 
-        drawStars();
+        animateParticles();
 
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
