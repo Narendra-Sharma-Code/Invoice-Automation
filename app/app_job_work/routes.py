@@ -969,6 +969,10 @@ def process_file():
         print("No 'Pure Wt' columns found for 0.995 Gold.")
 
        
+    # Convert "gross wt (gms)" to numeric, forcing errors to NaN (if any)
+    final_output["gross wt (gms)"] = pd.to_numeric(final_output["gross wt (gms)"], errors='coerce')
+
+    # Now recalculate numeric_columns after conversion
     numeric_columns = final_output.select_dtypes(include=['number']).columns
 
     # Calculate the sum for each numeric column
@@ -979,12 +983,12 @@ def process_file():
   
     # Add a label for the totals row (e.g., in the first column)
     totals_row.update({col: None for col in final_output.columns if col not in numeric_columns})
-
+    totals_row["gross wt (gms)"] = round(final_output["gross wt (gms)"].sum(), 3)
 
     # Append the totals row to the DataFrame
     final_output_total = pd.concat([final_output, pd.DataFrame([totals_row])], ignore_index=True)    
     last_row_of_total = final_output_total.iloc[-1]
-   
+
     try:
         # ========= Step A: Process the Excel File for Filtered Qty Values =========
         df_original = pd.read_excel(input_file, header=3)
